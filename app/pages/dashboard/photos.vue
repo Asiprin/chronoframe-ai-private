@@ -2000,6 +2000,135 @@ const handleReprocessSingle = async (photo: Photo) => {
   }
 }
 
+// AI 生成单张照片元数据
+const handleAiGenerateRequest = async (photo: Photo) => {
+  if (!photo?.id) {
+    return
+  }
+
+  try {
+    const result = await $fetch('/api/queue/add-task', {
+      method: 'POST',
+      body: {
+        payload: {
+          type: 'photo-ai-metadata',
+          photoId: photo.id,
+        },
+        priority: 1,
+        maxAttempts: 3,
+      },
+    })
+
+    if (result.success) {
+      toast.add({
+        title: $t('dashboard.photos.messages.aiGenerateQueued'),
+        description:
+          typeof result.taskId === 'number'
+            ? $t('dashboard.photos.messages.reprocessTaskId', {
+                taskId: result.taskId,
+              })
+            : '',
+        color: 'success',
+      })
+    } else {
+      toast.add({
+        title: $t('dashboard.photos.messages.aiGenerateFailed'),
+        description: result?.message || '',
+        color: 'error',
+      })
+    }
+  } catch (error: any) {
+    console.error('Failed to enqueue AI metadata task:', error)
+    const message =
+      error?.data?.statusMessage ||
+      error?.statusMessage ||
+      error?.message ||
+      $t('dashboard.photos.messages.aiGenerateFailed')
+
+    toast.add({
+      title: $t('dashboard.photos.messages.aiGenerateFailed'),
+      description: message,
+      color: 'error',
+    })
+  }
+}
+
+// 批量 AI 生成照片元数据
+const handleBatchAiGenerate = async () => {
+  const selectedRowModel = table.value?.tableApi?.getFilteredSelectedRowModel()
+  const selectedPhotos =
+    selectedRowModel?.rows.map((row: any) => row.original) || []
+
+  if (selectedPhotos.length === 0) {
+    toast.add({
+      title: $t('dashboard.photos.messages.batchSelectRequired'),
+      description: '',
+      color: 'warning',
+    })
+    return
+  }
+
+  const photosWithId = selectedPhotos.filter((photo: Photo) => photo.id)
+  if (photosWithId.length !== selectedPhotos.length) {
+    toast.add({
+      title: $t('dashboard.photos.messages.error'),
+      description: $t('dashboard.photos.messages.batchNoStorageKey', {
+        count: selectedPhotos.length - photosWithId.length,
+      }),
+      color: 'error',
+    })
+    return
+  }
+
+  try {
+    const aiToast = toast.add({
+      title: $t('dashboard.photos.messages.aiGenerateQueued'),
+      description: '',
+      color: 'info',
+    })
+
+    const result = await $fetch('/api/queue/add-tasks', {
+      method: 'POST',
+      body: {
+        tasks: photosWithId.map((photo: Photo) => ({
+          payload: {
+            type: 'photo-ai-metadata',
+            photoId: photo.id,
+          },
+          priority: 1,
+          maxAttempts: 3,
+        })),
+      },
+    })
+
+    if (result.success) {
+      toast.update(aiToast.id, {
+        title: $t('dashboard.photos.messages.aiGenerateQueued'),
+        description: $t('dashboard.queue.title', {
+          count: photosWithId.length,
+        }),
+        color: 'success',
+      })
+    } else {
+      toast.update(aiToast.id, {
+        title: $t('dashboard.photos.messages.error'),
+        description: $t('dashboard.photos.messages.aiGenerateFailed'),
+        color: 'error',
+      })
+    }
+
+    // 清空选中状态
+    rowSelection.value = {}
+  } catch (error: any) {
+    console.error('批量 AI 生成任务提交失败:', error)
+    toast.add({
+      title: $t('dashboard.photos.messages.aiGenerateFailed'),
+      description: error.message || $t('dashboard.photos.messages.error'),
+      color: 'error',
+    })
+  }
+}
+
 const getRowActions = (photo: Photo) => {
   const isReverseLoading = !!reverseGeocodeLoading.value[photo.id]
 
@@ -2017,6 +2146,13 @@ const getRowActions = (photo: Photo) => {
         icon: 'tabler:folder-plus',
         onSelect() {
           openAddToAlbumsDialog(photo)
+        },
+      },
+      {
+        label: $t('dashboard.photos.actions.aiGenerate'),
+        icon: 'tabler:sparkles',
+        onSelect() {
+          handleAiGenerateRequest(photo)
         },
       },
       {
@@ -3069,6 +3205,19 @@ onUnmounted(() => {
                 >
                   <span>{{
                     $t('dashboard.photos.selection.batchReprocess')
+                  }}</span>
+                </UButton>
+
+                <UButton
+                  variant="soft"
+                  color="primary"
+                  size="xs"
+                  icon="tabler:sparkles"
+                  class="flex-1 sm:flex-none"
+                  @click="handleBatchAiGenerate"
+                >
+                  <span>{{
+                    $t('dashboard.photos.selection.batchAiGenerate')
                   }}</span>
                 </UButton>
 

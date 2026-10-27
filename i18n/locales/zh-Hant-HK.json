@@ -526,13 +526,15 @@
         "refreshLocation": "重新取得城市",
         "delete": "刪除",
         "editMetadata": "編輯資訊",
-        "previewPhoto": "相片預覽"
+        "previewPhoto": "相片預覽",
+        "aiGenerate": "AI 產生中繼資料"
       },
       "selection": {
         "selected": "已選擇 {count} / {total} 列",
         "batchReprocess": "批量重新處理",
         "batchDownload": "批量下載",
-        "batchDelete": "批量刪除"
+        "batchDelete": "批量刪除",
+        "batchAiGenerate": "AI 產生"
       },
       "slideover": {
         "title": "上傳相片",
@@ -607,7 +609,9 @@
         "noChangesProvided": "沒有可套用的變更",
         "queueUnavailable": "任務隊列不可用",
         "reverseGeocodeQueued": "已新增重新取得城市的任務",
-        "reverseGeocodeFailed": "重新取得城市任務新增失敗"
+        "reverseGeocodeFailed": "重新取得城市任務新增失敗",
+        "aiGenerateQueued": "已加入 AI 產生佇列",
+        "aiGenerateFailed": "AI 產生任務提交失敗"
       },
       "errors": {
         "noSelection": "請選擇相片進行上傳",
@@ -1140,6 +1144,60 @@
           "description": "Matomo 服務器地址（例如 https://matomo.example.com）",
           "label": "Matomo 實例 URL"
         }
+      }
+    },
+    "ai": {
+      "enabled": {
+        "label": "啟用 AI 智能識別",
+        "description": "使用 AI 視覺模型自動產生照片的標題、描述和標籤",
+        "options": {
+          "off": "關閉",
+          "on": "開啟"
+        },
+        "help": "需要填寫 API 位址、API Key 和模型名稱。請使用支援視覺輸入的模型（如 GLM-4V-Flash、Qwen-VL、GPT-4o-mini）；純文字模型（如 DeepSeek）無法識別圖片內容"
+      },
+      "apiBase": {
+        "label": "API 位址",
+        "description": "OpenAI 相容介面位址（以 /v1 結尾）",
+        "help": "例如 DeepSeek：https://api.deepseek.com/v1；智譜：https://open.bigmodel.cn/api/paas/v4；OpenAI：https://api.openai.com/v1"
+      },
+      "apiKey": {
+        "label": "API Key",
+        "description": "AI 服務的 API 金鑰",
+        "help": "金鑰儲存在資料庫中，不會暴露給訪客"
+      },
+      "model": {
+        "label": "模型名稱",
+        "description": "用於圖片識別的模型（需支援視覺輸入）",
+        "help": "例如智譜 glm-4v-flash（免費）、通義 qwen-vl-plus、OpenAI gpt-4o-mini"
+      },
+      "language": {
+        "label": "產生語言",
+        "description": "標題、描述和標籤的輸出語言",
+        "options": {
+          "zh-CN": "简体中文",
+          "zh-TW": "繁體中文",
+          "en": "English",
+          "ja": "日本語"
+        }
+      },
+      "autoGenerate": {
+        "label": "上傳後自動產生",
+        "description": "新照片處理完成後自動呼叫 AI 產生中繼資料",
+        "options": {
+          "off": "關閉",
+          "on": "開啟"
+        },
+        "help": "只填補空白欄位，不會覆蓋已有內容（除非開啟下方的覆蓋開關）"
+      },
+      "overwrite": {
+        "label": "覆蓋已有內容",
+        "description": "AI 產生結果覆蓋已填寫的標題、描述和標籤",
+        "options": {
+          "off": "關閉",
+          "on": "開啟"
+        },
+        "help": "預設關閉，只填補空白欄位，保護手動填寫的內容"
       }
     },
     "oauth": {

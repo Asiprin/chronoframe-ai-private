@@ -12,12 +12,18 @@ import {
   processImageMetadataAndSharp,
 } from '../image/processor'
 import { generateThumbnailAndHash } from '../image/thumbnail'
-import { extractExifData, extractPhotoInfo } from '../image/exif'
+import { extractExifData, extractPhotoInfo, deriveTitleFromFileName } from '../image/exif'
 import { detectPanoramaExifPatch } from '../image/panorama'
 import {
   extractLocationFromGPS,
   parseGPSCoordinates,
 } from '../location/geocoding'
+import {
+  generatePhotoMetadata,
+  getAIConfig,
+} from '../ai/metadata'
+import { writeMetadataToExif } from '../ai/writeback'
+import { settingsManager } from '~~/server/services/settings/settingsManager'
 import {
   ensureLivePhotoPlaybackVideo,
   findLivePhotoVideoForImage,
@@ -26,18 +32,12 @@ import { processMotionPhotoFromXmp } from '../video/motion-photo'
 import { processVideoMetadata } from '../video/processor'
 import { getStorageManager } from '~~/server/plugins/3.storage'
 import { toFileProxyUrl } from '~~/server/utils/publicFile'
+import { NonRetryableError } from './errors'
 
 // 首次重试等待时间，后续失败按指数退避。
 const INITIAL_RETRY_DELAY_MS = 1000
 // 单次重试最大等待时间，避免失败任务等待过久。
 const MAX_RETRY_DELAY_MS = 30000
-
-class NonRetryableError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'NonRetryableError'
-  }
-}
 
 export class QueueManager {
   private static instances: Map<string, QueueManager> = new Map()
@@ -547,6 +547,35 @@ export class QueueManager {
             }
           }
 
+          // 如果启用了 AI 自动生成，投递 AI 元数据生成任务
+          try {
+            const aiEnabled = await settingsManager.get<boolean>('ai', 'enabled')
+            const autoGenerate = await settingsManager.get<boolean>(
+              'ai',
+              'autoGenerate',
+            )
+            if (aiEnabled && autoGenerate) {
+              await this.addTask(
+                {
+                  type: 'photo-ai-metadata',
+                  photoId,
+                },
+                {
+                  priority: 0,
+                  maxAttempts: 3,
+                },
+              )
+              this.logger.info(
+                `已为照片 ${photoId} 投递 AI 元数据生成任务`,
+              )
+            }
+          } catch (aiError) {
+            this.logger.warn(
+              `为照片 ${photoId} 投递 AI 元数据任务失败：`,
+              aiError,
+            )
+          }
+
           this.logger.success(`任务 ${taskId} 处理成功`)
           return result
         } catch (error) {
@@ -649,6 +678,155 @@ export class QueueManager {
         } catch (error) {
           this.logger.error(
             `[${taskId}:reverse-geocoding] 为照片 ${photoId} 更新位置失败`,
+            error,
+          )
+          throw error
+        }
+      },
+      aiMetadata: async (task: PipelineQueueItem) => {
+        const db = useDB()
+        const { id: taskId, payload } = task
+
+        if (payload.type !== 'photo-ai-metadata') {
+          throw new Error(
+            `无效的负载类型 ${payload.type} 用于 AI 元数据生成任务`,
+          )
+        }
+
+        const { photoId } = payload
+
+        try {
+          await this.updateTaskStage(taskId, 'ai-metadata')
+          this.logger.info(
+            `[${taskId}:ai-metadata] 为照片 ${photoId} 生成 AI 元数据`,
+          )
+
+          const photo = await db
+            .select()
+            .from(tables.photos)
+            .where(eq(tables.photos.id, photoId))
+            .get()
+
+          if (!photo) {
+            throw new NonRetryableError(`照片 ${photoId} 未找到`)
+          }
+
+          if (photo.isVideo === 1) {
+            this.logger.info(
+              `[${taskId}:ai-metadata] 照片 ${photoId} 是视频，暂不支持 AI 识别，跳过`,
+            )
+            return
+          }
+
+          const overwrite =
+            (await settingsManager.get<boolean>('ai', 'overwrite')) ?? false
+
+          // 标题可能只是上传时从文件名派生的默认值，视为"未填写"
+          const defaultTitle = photo.storageKey
+            ? deriveTitleFromFileName(photo.storageKey)
+            : ''
+          const needsTitle = !photo.title || photo.title === defaultTitle
+          const needsDescription = !photo.description
+          const needsTags = !photo.tags || photo.tags.length === 0
+
+          if (!overwrite && !needsTitle && !needsDescription && !needsTags) {
+            this.logger.info(
+              `[${taskId}:ai-metadata] 照片 ${photoId} 已有元数据，跳过（可在系统设置中开启"覆盖已有内容"）`,
+            )
+            return
+          }
+
+          // 只有确实需要生成时才检查配置与调用 AI 接口
+          const aiConfig = await getAIConfig()
+          if (!aiConfig) {
+            throw new NonRetryableError(
+              'AI 智能识别未启用或未配置（需要在系统设置中填写 API 地址、API Key 和模型名称）',
+            )
+          }
+
+          const storageProvider = getStorageManager().getProvider()
+          let imageBuffer = await storageProvider.get(photo.storageKey)
+          if (!imageBuffer && photo.thumbnailKey) {
+            imageBuffer = await storageProvider.get(photo.thumbnailKey)
+          }
+          if (!imageBuffer) {
+            throw new NonRetryableError(
+              `未在存储中找到照片文件：${photo.storageKey}`,
+            )
+          }
+
+          const exif = photo.exif
+          const generated = await generatePhotoMetadata({
+            imageBuffer,
+            context: {
+              dateTaken: photo.dateTaken,
+              locationName: photo.locationName,
+              city: photo.city,
+              country: photo.country,
+              cameraModel: exif?.Model ?? exif?.Make ?? null,
+            },
+          })
+
+          const updateData: Record<string, any> = {}
+          if (generated.title && (overwrite || needsTitle)) {
+            updateData.title = generated.title
+          }
+          if (generated.description && (overwrite || needsDescription)) {
+            updateData.description = generated.description
+          }
+          if (generated.tags.length > 0 && (overwrite || needsTags)) {
+            updateData.tags = generated.tags
+          }
+
+          if (Object.keys(updateData).length === 0) {
+            this.logger.warn(
+              `[${taskId}:ai-metadata] AI 返回的元数据为空，未更新照片 ${photoId}`,
+            )
+            return
+          }
+
+          await db
+            .update(tables.photos)
+            .set(updateData)
+            .where(eq(tables.photos.id, photoId))
+
+          this.logger.success(
+            `[${taskId}:ai-metadata] 照片 ${photoId} AI 元数据已写入数据库`,
+          )
+
+          // 尽力写回 EXIF（失败不影响数据库结果）
+          try {
+            const writeback = await writeMetadataToExif({
+              storageProvider,
+              photo,
+              metadata: {
+                title: updateData.title,
+                description: updateData.description,
+                tags: updateData.tags,
+              },
+            })
+            if (writeback) {
+              await db
+                .update(tables.photos)
+                .set({
+                  exif: writeback.exif,
+                  fileSize: writeback.fileSize,
+                  lastModified: new Date().toISOString(),
+                })
+                .where(eq(tables.photos.id, photoId))
+              this.logger.info(
+                `[${taskId}:ai-metadata] 照片 ${photoId} 元数据已写回 EXIF`,
+              )
+            }
+          } catch (writebackError) {
+            this.logger.warn(
+              `[${taskId}:ai-metadata] 照片 ${photoId} EXIF 写回失败（数据库已更新）：`,
+              writebackError,
+            )
+          }
+        } catch (error) {
+          this.logger.error(
+            `[${taskId}:ai-metadata] 照片 ${photoId} AI 元数据生成失败`,
             error,
           )
           throw error
@@ -979,6 +1157,9 @@ export class QueueManager {
             break
           case 'photo-reverse-geocoding':
             await this.processors.reverseGeocoding(task)
+            break
+          case 'photo-ai-metadata':
+            await this.processors.aiMetadata(task)
             break
           case 'file-encryption':
             await this.processors.fileEncryption(task)

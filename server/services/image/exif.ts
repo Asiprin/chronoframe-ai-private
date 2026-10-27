@@ -427,6 +427,22 @@ const pickFirstText = (...values: Array<unknown>): string | undefined => {
   return undefined
 }
 
+/**
+ * 从存储 key 派生默认标题（清理过的文件名）。
+ * extractPhotoInfo 在 EXIF 无标题时使用该值兜底，
+ * AI 元数据生成用它判断现有标题是否只是"文件名默认值"。
+ */
+export const deriveTitleFromFileName = (s3key: string): string => {
+  const fileName = path.basename(s3key, path.extname(s3key))
+  const cleanedFileName = fileName
+    .replaceAll(/\d{4}-\d{2}-\d{2}[_-]?/g, '')
+    .replaceAll(/[_-]?\d+views?/gi, '')
+    .replaceAll(/[_-]+/g, ' ')
+    .trim()
+
+  return cleanedFileName || fileName
+}
+
 export const extractPhotoInfo = (
   s3key: string,
   exifData?: NeededExif | null,
@@ -477,14 +493,9 @@ export const extractPhotoInfo = (
   )
 
   let title = titleFromExif
-  const cleanedFileName = fileName
-    .replaceAll(/\d{4}-\d{2}-\d{2}[_-]?/g, '')
-    .replaceAll(/[_-]?\d+views?/gi, '')
-    .replaceAll(/[_-]+/g, ' ')
-    .trim()
 
   if (!title) {
-    title = cleanedFileName || path.basename(s3key, path.extname(s3key))
+    title = deriveTitleFromFileName(s3key)
   }
 
   const description =

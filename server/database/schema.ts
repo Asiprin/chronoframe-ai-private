@@ -33,6 +33,10 @@ type PipelineQueuePayload =
       longitude?: number | null
     }
   | {
+      type: 'photo-ai-metadata'
+      photoId: string
+    }
+  | {
       type: 'file-encryption'
       storageKey: string
     }
@@ -123,6 +127,7 @@ export const pipelineQueue = sqliteTable(
         'exif',
         'motion-photo',
         'reverse-geocoding',
+        'ai-metadata',
         'live-photo',
         'video-metadata',
         'video-thumbnail',

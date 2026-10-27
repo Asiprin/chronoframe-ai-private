@@ -576,13 +576,15 @@
         "refreshLocation": "重新获取城市",
         "delete": "删除",
         "editMetadata": "编辑信息",
-        "previewPhoto": "预览照片"
+        "previewPhoto": "预览照片",
+        "aiGenerate": "AI 生成元数据"
       },
       "selection": {
         "selected": "{count} / {total} 行已选择",
         "batchReprocess": "重新处理",
         "batchDownload": "批量下载",
-        "batchDelete": "批量删除"
+        "batchDelete": "批量删除",
+        "batchAiGenerate": "AI 生成"
       },
       "slideover": {
         "title": "上传照片",
@@ -657,7 +659,9 @@
         "noChangesProvided": "没有可应用的修改",
         "queueUnavailable": "任务队列不可用",
         "reverseGeocodeQueued": "已加入重新获取城市任务",
-        "reverseGeocodeFailed": "重新获取城市任务添加失败"
+        "reverseGeocodeFailed": "重新获取城市任务添加失败",
+        "aiGenerateQueued": "已加入 AI 生成队列",
+        "aiGenerateFailed": "AI 生成任务提交失败"
       },
       "errors": {
         "noSelection": "请选择要上传的照片",
@@ -1210,6 +1214,60 @@
           "label": "Matomo 站点 ID",
           "description": "Matomo 中配置的站点 ID"
         }
+      }
+    },
+    "ai": {
+      "enabled": {
+        "label": "启用 AI 智能识别",
+        "description": "使用 AI 视觉模型自动生成照片的标题、描述和标签",
+        "options": {
+          "off": "关闭",
+          "on": "开启"
+        },
+        "help": "需要填写 API 地址、API Key 和模型名称。请使用支持视觉输入的模型（如 GLM-4V-Flash、Qwen-VL、GPT-4o-mini）；纯文本模型（如 DeepSeek）无法识别图片内容"
+      },
+      "apiBase": {
+        "label": "API 地址",
+        "description": "OpenAI 兼容接口地址（以 /v1 结尾）",
+        "help": "例如 DeepSeek：https://api.deepseek.com/v1；智谱：https://open.bigmodel.cn/api/paas/v4；OpenAI：https://api.openai.com/v1"
+      },
+      "apiKey": {
+        "label": "API Key",
+        "description": "AI 服务的 API 密钥",
+        "help": "密钥保存在数据库中，不会暴露给访客"
+      },
+      "model": {
+        "label": "模型名称",
+        "description": "用于图片识别的模型（需支持视觉输入）",
+        "help": "例如智谱 glm-4v-flash（免费）、通义 qwen-vl-plus、OpenAI gpt-4o-mini"
+      },
+      "language": {
+        "label": "生成语言",
+        "description": "标题、描述和标签的输出语言",
+        "options": {
+          "zh-CN": "简体中文",
+          "zh-TW": "繁體中文",
+          "en": "English",
+          "ja": "日本語"
+        }
+      },
+      "autoGenerate": {
+        "label": "上传后自动生成",
+        "description": "新照片处理完成后自动调用 AI 生成元数据",
+        "options": {
+          "off": "关闭",
+          "on": "开启"
+        },
+        "help": "只补全空白字段，不会覆盖已有内容（除非开启下方的覆盖开关）"
+      },
+      "overwrite": {
+        "label": "覆盖已有内容",
+        "description": "AI 生成结果覆盖已填写的标题、描述和标签",
+        "options": {
+          "off": "关闭",
+          "on": "开启"
+        },
+        "help": "默认关闭，只补全空白字段，保护手动填写的内容"
       }
     },
     "upload": {

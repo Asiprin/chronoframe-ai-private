@@ -526,13 +526,15 @@
         "refreshLocation": "都市情報を再取得",
         "delete": "削除",
         "editMetadata": "メタデータを編集",
-        "previewPhoto": "プレビュー写真"
+        "previewPhoto": "プレビュー写真",
+        "aiGenerate": "AI でメタデータ生成"
       },
       "selection": {
         "selected": "{count} / {total}行選択済み",
         "batchReprocess": "一括再処理",
         "batchDownload": "一括ダウンロード",
-        "batchDelete": "一括削除"
+        "batchDelete": "一括削除",
+        "batchAiGenerate": "AI 生成"
       },
       "slideover": {
         "title": "写真をアップロード",
@@ -607,7 +609,9 @@
         "noChangesProvided": "適用できる変更がありません",
         "queueUnavailable": "タスクキューを利用できません",
         "reverseGeocodeQueued": "都市情報の再取得タスクをキューに追加しました",
-        "reverseGeocodeFailed": "都市情報の再取得タスクの追加に失敗しました"
+        "reverseGeocodeFailed": "都市情報の再取得タスクの追加に失敗しました",
+        "aiGenerateQueued": "AI 生成キューに追加しました",
+        "aiGenerateFailed": "AI 生成タスクの追加に失敗しました"
       },
       "errors": {
         "noSelection": "アップロードする写真を選択してください",
@@ -1160,6 +1164,60 @@
           "label": "Matomo Site ID",
           "description": "Site ID configured in Matomo"
         }
+      }
+    },
+    "ai": {
+      "enabled": {
+        "label": "AI 画像認識を有効化",
+        "description": "AI ビジョンモデルで写真のタイトル・説明・タグを自動生成します",
+        "options": {
+          "off": "オフ",
+          "on": "オン"
+        },
+        "help": "API ベース URL・API Key・モデル名の設定が必要です。ビジョン対応モデル（GLM-4V-Flash、Qwen-VL、GPT-4o-mini など）を使用してください。テキストのみのモデル（DeepSeek など）は画像を認識できません"
+      },
+      "apiBase": {
+        "label": "API ベース URL",
+        "description": "OpenAI 互換 API エンドポイント（/v1 で終わる）",
+        "help": "例: DeepSeek: https://api.deepseek.com/v1、智譜: https://open.bigmodel.cn/api/paas/v4、OpenAI: https://api.openai.com/v1"
+      },
+      "apiKey": {
+        "label": "API Key",
+        "description": "AI サービスの API キー",
+        "help": "データベースに保存され、閲覧者には公開されません"
+      },
+      "model": {
+        "label": "モデル名",
+        "description": "画像認識に使用するモデル（ビジョン入力対応が必要）",
+        "help": "例: glm-4v-flash（智譜・無料）、qwen-vl-plus、gpt-4o-mini"
+      },
+      "language": {
+        "label": "生成言語",
+        "description": "タイトル・説明・タグの出力言語",
+        "options": {
+          "zh-CN": "简体中文",
+          "zh-TW": "繁體中文",
+          "en": "English",
+          "ja": "日本語"
+        }
+      },
+      "autoGenerate": {
+        "label": "アップロード時に自動生成",
+        "description": "新規写真の処理完了後に AI でメタデータを自動生成します",
+        "options": {
+          "off": "オフ",
+          "on": "オン"
+        },
+        "help": "空のフィールドのみ埋めます（下の上書きが有効な場合を除き、既存の内容は保持されます）"
+      },
+      "overwrite": {
+        "label": "既存の内容を上書き",
+        "description": "AI の生成結果でタイトル・説明・タグを置き換えます",
+        "options": {
+          "off": "オフ",
+          "on": "オン"
+        },
+        "help": "デフォルトはオフ。空のフィールドのみ埋め、手動編集を保護します"
       }
     },
     "upload": {

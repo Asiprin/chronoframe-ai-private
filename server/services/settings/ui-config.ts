@@ -185,6 +185,87 @@ export const ANALYTICS_SETTINGS_UI: Record<string, FieldUIConfig> = {
   },
 }
 
+export const AI_SETTINGS_UI: Record<string, FieldUIConfig> = {
+  enabled: {
+    type: 'tabs',
+    options: [
+      {
+        label: 'settings.ai.enabled.options.off',
+        value: false,
+        icon: 'tabler:toggle-left',
+      },
+      {
+        label: 'settings.ai.enabled.options.on',
+        value: true,
+        icon: 'tabler:toggle-right',
+      },
+    ],
+    help: 'settings.ai.enabled.help',
+  },
+  apiBase: {
+    type: 'url',
+    placeholder: 'https://api.deepseek.com/v1',
+    visibleIf: { fieldKey: 'enabled', value: true },
+    help: 'settings.ai.apiBase.help',
+  },
+  apiKey: {
+    type: 'password',
+    placeholder: 'sk-xxxxxx',
+    visibleIf: { fieldKey: 'enabled', value: true },
+    help: 'settings.ai.apiKey.help',
+  },
+  model: {
+    type: 'input',
+    placeholder: 'glm-4v-flash / qwen-vl-plus / gpt-4o-mini',
+    visibleIf: { fieldKey: 'enabled', value: true },
+    help: 'settings.ai.model.help',
+  },
+  language: {
+    type: 'tabs',
+    options: [
+      { label: 'settings.ai.language.options.zh-CN', value: 'zh-CN' },
+      { label: 'settings.ai.language.options.zh-TW', value: 'zh-TW' },
+      { label: 'settings.ai.language.options.en', value: 'en' },
+      { label: 'settings.ai.language.options.ja', value: 'ja' },
+    ],
+    visibleIf: { fieldKey: 'enabled', value: true },
+  },
+  autoGenerate: {
+    type: 'tabs',
+    options: [
+      {
+        label: 'settings.ai.autoGenerate.options.off',
+        value: false,
+        icon: 'tabler:toggle-left',
+      },
+      {
+        label: 'settings.ai.autoGenerate.options.on',
+        value: true,
+        icon: 'tabler:toggle-right',
+      },
+    ],
+    visibleIf: { fieldKey: 'enabled', value: true },
+    help: 'settings.ai.autoGenerate.help',
+  },
+  overwrite: {
+    type: 'tabs',
+    options: [
+      {
+        label: 'settings.ai.overwrite.options.off',
+        value: false,
+        icon: 'tabler:toggle-left',
+      },
+      {
+        label: 'settings.ai.overwrite.options.on',
+        value: true,
+        icon: 'tabler:toggle-right',
+      },
+    ],
+    visibleIf: { fieldKey: 'enabled', value: true },
+    help: 'settings.ai.overwrite.help',
+  },
+}
+
 export const UPLOAD_SETTINGS_UI: Record<string, FieldUIConfig> = {
   'mime.whitelistEnabled': {
     type: 'tabs',
@@ -473,6 +554,7 @@ export function getSettingUIConfig(
     location: LOCATION_SETTINGS_UI,
     oauth: OAUTH_SETTINGS_UI,
     analytics: ANALYTICS_SETTINGS_UI,
+    ai: AI_SETTINGS_UI,
     upload: UPLOAD_SETTINGS_UI,
     security: SECURITY_SETTINGS_UI,
     storage: STORAGE_SETTINGS_UI,

@@ -576,13 +576,15 @@
         "refreshLocation": "Re-fetch City",
         "delete": "Delete",
         "editMetadata": "Edit Metadata",
-        "previewPhoto": "Photo Preview"
+        "previewPhoto": "Photo Preview",
+        "aiGenerate": "Generate with AI"
       },
       "selection": {
         "selected": "{count} / {total} rows selected",
         "batchReprocess": "Reprocess",
         "batchDownload": "Download",
-        "batchDelete": "Batch Delete"
+        "batchDelete": "Batch Delete",
+        "batchAiGenerate": "AI Generate"
       },
       "slideover": {
         "title": "Upload Photos",
@@ -657,7 +659,9 @@
         "noChangesProvided": "No changes to apply",
         "queueUnavailable": "Task queue is not available",
         "reverseGeocodeQueued": "Reverse geocoding task queued",
-        "reverseGeocodeFailed": "Failed to queue reverse geocoding"
+        "reverseGeocodeFailed": "Failed to queue reverse geocoding",
+        "aiGenerateQueued": "Queued for AI generation",
+        "aiGenerateFailed": "Failed to queue AI generation"
       },
       "errors": {
         "noSelection": "Please select photos to upload",
@@ -1210,6 +1214,60 @@
           "label": "Matomo Site ID",
           "description": "Site ID configured in Matomo"
         }
+      }
+    },
+    "ai": {
+      "enabled": {
+        "label": "Enable AI Recognition",
+        "description": "Use an AI vision model to automatically generate photo titles, descriptions, and tags",
+        "options": {
+          "off": "Off",
+          "on": "On"
+        },
+        "help": "Requires API Base, API Key, and model name. Use a vision-capable model (e.g. GLM-4V-Flash, Qwen-VL, GPT-4o-mini); text-only models (e.g. DeepSeek) cannot see images"
+      },
+      "apiBase": {
+        "label": "API Base URL",
+        "description": "OpenAI-compatible API endpoint (ending with /v1)",
+        "help": "e.g. DeepSeek: https://api.deepseek.com/v1; Zhipu: https://open.bigmodel.cn/api/paas/v4; OpenAI: https://api.openai.com/v1"
+      },
+      "apiKey": {
+        "label": "API Key",
+        "description": "API key for the AI service",
+        "help": "Stored in the database and never exposed to visitors"
+      },
+      "model": {
+        "label": "Model",
+        "description": "Model used for image recognition (must support vision input)",
+        "help": "e.g. glm-4v-flash (free on Zhipu), qwen-vl-plus, gpt-4o-mini"
+      },
+      "language": {
+        "label": "Output Language",
+        "description": "Language for generated titles, descriptions, and tags",
+        "options": {
+          "zh-CN": "简体中文",
+          "zh-TW": "繁體中文",
+          "en": "English",
+          "ja": "日本語"
+        }
+      },
+      "autoGenerate": {
+        "label": "Auto-generate on upload",
+        "description": "Automatically generate metadata after new photos finish processing",
+        "options": {
+          "off": "Off",
+          "on": "On"
+        },
+        "help": "Only fills empty fields; existing content is kept unless overwrite is enabled below"
+      },
+      "overwrite": {
+        "label": "Overwrite existing content",
+        "description": "AI results replace existing title, description, and tags",
+        "options": {
+          "off": "Off",
+          "on": "On"
+        },
+        "help": "Off by default — only empty fields are filled, protecting manual edits"
       }
     },
     "upload": {

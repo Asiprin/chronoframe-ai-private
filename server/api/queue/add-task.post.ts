@@ -27,6 +27,10 @@ export default defineEventHandler(async (event) => {
         longitude: z.number().min(-180).max(180).optional(),
       }),
       z.object({
+        type: z.literal('photo-ai-metadata'),
+        photoId: z.string().min(1),
+      }),
+      z.object({
         type: z.literal('file-encryption'),
         storageKey: z.string().nonempty(),
       }),

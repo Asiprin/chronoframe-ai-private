@@ -10,6 +10,7 @@ useHead({
 
 const { fields: oauthFields, state: oauthState, submit: oauthSubmit, loading: oauthLoading } = useSettingsForm('oauth')
 const { fields: analyticsFields, state: analyticsState, submit: analyticsSubmit, loading: analyticsLoading } = useSettingsForm('analytics')
+const { fields: aiFields, state: aiState, submit: aiSubmit, loading: aiLoading } = useSettingsForm('ai')
 const { fields: uploadFields, state: uploadState, submit: uploadSubmit, loading: uploadLoading } = useSettingsForm('upload')
 const { fields: securityFields, state: securityState, submit: securitySubmit, loading: securityLoading } = useSettingsForm('security')
 
@@ -25,6 +26,7 @@ const visibleOAuthFields = computed(() => filterVisible(oauthFields.value, oauth
 const visibleAnalyticsFields = computed(() =>
   filterVisible(analyticsFields.value, analyticsState),
 )
+const visibleAIFields = computed(() => filterVisible(aiFields.value, aiState))
 const visibleUploadFields = computed(() => filterVisible(uploadFields.value, uploadState))
 const visibleSecurityFields = computed(() =>
   filterVisible(securityFields.value, securityState),
@@ -41,6 +43,14 @@ const handleOAuthSubmit = async () => {
 const handleAnalyticsSubmit = async () => {
   try {
     await analyticsSubmit(analyticsState)
+  } catch {
+    /* empty */
+  }
+}
+
+const handleAISubmit = async () => {
+  try {
+    await aiSubmit(aiState)
   } catch {
     /* empty */
   }
@@ -127,6 +137,38 @@ const handleSecuritySubmit = async () => {
               :loading="analyticsLoading"
               type="submit"
               form="analyticsSettingsForm"
+              variant="soft"
+              icon="tabler:device-floppy"
+            >
+              保存设置
+            </UButton>
+          </template>
+        </UCard>
+
+        <UCard variant="outline">
+          <template #header>
+            <span>AI 智能识别设置</span>
+          </template>
+
+          <UForm
+            id="aiSettingsForm"
+            class="space-y-4"
+            @submit="handleAISubmit"
+          >
+            <SettingField
+              v-for="field in visibleAIFields"
+              :key="field.key"
+              :field="field"
+              :model-value="aiState[field.key]"
+              @update:model-value="(val) => (aiState[field.key] = val)"
+            />
+          </UForm>
+
+          <template #footer>
+            <UButton
+              :loading="aiLoading"
+              type="submit"
+              form="aiSettingsForm"
               variant="soft"
               icon="tabler:device-floppy"
             >
