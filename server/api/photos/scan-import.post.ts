@@ -19,6 +19,7 @@ const IMAGE_EXTENSIONS = new Set([
   '.tiff',
   '.heic',
   '.heif',
+  '.avif',
   '.hdr',
   '.exr',
 ])
@@ -41,6 +42,10 @@ const LIVE_PHOTO_IMAGE_EXTENSIONS = new Set(['.heic', '.heif', '.jpg', '.jpeg'])
 type ScanTaskType = 'photo' | 'video' | 'live-photo-video'
 
 const getExtension = (key: string) => path.extname(key).toLowerCase()
+
+/** 比对用的归一化：统一斜杠并去掉开头的 /（容忍历史数据里的前导斜杠差异） */
+const normalizeKey = (key: string) =>
+  key.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+/, '')
 
 const getPairId = (key: string) => {
   const ext = path.extname(key)
@@ -82,13 +87,19 @@ export default eventHandler(async (event) => {
         LIVE_PHOTO_VIDEO_EXTENSIONS.has(ext)
       )
     })
+  const candidateSet = new Set(candidateKeys)
 
-  // 2. 与数据库比对，找出未入库的文件
+  // 2. 与数据库比对，找出未入库的文件（归一化 key，容忍前导斜杠差异）
   const db = useDB()
   const existingRows = await db
-    .select({ storageKey: tables.photos.storageKey })
+    .select({
+      storageKey: tables.photos.storageKey,
+      fileSize: tables.photos.fileSize,
+    })
     .from(tables.photos)
-  const existingKeys = new Set(existingRows.map((row) => row.storageKey))
+  const existingMap = new Map(
+    existingRows.map((row) => [normalizeKey(row.storageKey), row.fileSize]),
+  )
 
   // 实况照片配对集合：同目录同名的图片（照抄上传分类器的语义）
   const liveImagePairIds = new Set(
@@ -107,18 +118,33 @@ export default eventHandler(async (event) => {
   }
 
   const newItems: Array<{ type: ScanTaskType; storageKey: string }> = []
-  for (const storageKey of candidateKeys) {
-    if (existingKeys.has(storageKey)) continue
+  let existingCount = 0
+  let conflictCount = 0
+  for (const obj of objects) {
+    const storageKey = obj.key
+    if (!candidateSet.has(storageKey)) continue
+    const hit = existingMap.get(normalizeKey(storageKey))
+    if (hit !== undefined) {
+      existingCount += 1
+      // 同名但大小与入库记录不同 → 大概率是另一个文件，需重命名才能导入
+      if (typeof hit === 'number' && obj.size != null && hit !== obj.size) {
+        conflictCount += 1
+      }
+      continue
+    }
     newItems.push({ type: classify(storageKey), storageKey })
   }
+
+  const scanRoot = (storageProvider.config?.prefix as string) || ''
 
   if (newItems.length === 0) {
     return {
       success: true,
-      scanned: candidateKeys.length,
-      existing: candidateKeys.length,
+      scanned: candidateSet.size,
+      existing: existingCount,
       queued: 0,
-      byType: { photo: 0, video: 0, 'live-photo-video': 0 },
+      conflicts: conflictCount,
+      scanRoot,
     }
   }
 
@@ -145,9 +171,11 @@ export default eventHandler(async (event) => {
 
   return {
     success: true,
-    scanned: candidateKeys.length,
-    existing: candidateKeys.length - newItems.length,
+    scanned: candidateSet.size,
+    existing: existingCount,
     queued: newItems.length,
+    conflicts: conflictCount,
+    scanRoot,
     byType,
   }
 })

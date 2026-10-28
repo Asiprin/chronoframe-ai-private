@@ -616,7 +616,10 @@
         "scanImportQueued": "掃描完成：{count} 個新檔案已加入處理佇列",
         "scanImportDetail": "共掃描 {scanned} 個檔案，已存在 {existing} 個",
         "scanImportEmpty": "沒有發現新檔案",
-        "scanImportFailed": "掃描匯入失敗"
+        "scanImportFailed": "掃描匯入失敗",
+        "scanImportHint": "請把照片放入 {root}（與現有照片同一目錄，支援子資料夾）",
+        "scanImportRootLabel": "儲存根目錄",
+        "scanImportConflicts": "{count} 個檔案與庫中記錄同名但內容不同，如需匯入請先重新命名"
       },
       "errors": {
         "noSelection": "請選擇照片進行上傳",

@@ -616,7 +616,10 @@
         "scanImportQueued": "スキャン完了：{count} 件の新規ファイルを処理キューに追加しました",
         "scanImportDetail": "{scanned} 件をスキャン、{existing} 件は登録済み",
         "scanImportEmpty": "新しいファイルは見つかりませんでした",
-        "scanImportFailed": "スキャン取込に失敗しました"
+        "scanImportFailed": "スキャン取込に失敗しました",
+        "scanImportHint": "写真を {root}（既存写真と同じフォルダ、サブフォルダ対応）に入れてください",
+        "scanImportRootLabel": "ストレージのルートフォルダ",
+        "scanImportConflicts": "{count} 件のファイルが既存エントリと同名ですが内容が異なります。取り込むにはリネームしてください"
       },
       "errors": {
         "noSelection": "アップロードする写真を選択してください",

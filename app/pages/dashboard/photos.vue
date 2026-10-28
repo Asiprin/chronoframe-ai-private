@@ -1547,24 +1547,37 @@ const handleScanImport = async () => {
     const result = await $fetch('/api/photos/scan-import', {
       method: 'POST',
     })
+    const rootLabel = result.scanRoot
+      ? `${result.scanRoot}/`
+      : $t('dashboard.photos.messages.scanImportRootLabel')
+    const detail = $t('dashboard.photos.messages.scanImportDetail', {
+      scanned: result.scanned,
+      existing: result.existing,
+    })
+    const conflictsText =
+      result.conflicts > 0
+        ? ` ${$t('dashboard.photos.messages.scanImportConflicts', {
+            count: result.conflicts,
+          })}`
+        : ''
+
     if (result.queued > 0) {
       toast.add({
         title: $t('dashboard.photos.messages.scanImportQueued', {
           count: result.queued,
         }),
-        description: $t('dashboard.photos.messages.scanImportDetail', {
-          scanned: result.scanned,
-          existing: result.existing,
-        }),
+        description: detail + conflictsText,
         color: 'success',
       })
     } else {
       toast.add({
         title: $t('dashboard.photos.messages.scanImportEmpty'),
-        description: $t('dashboard.photos.messages.scanImportDetail', {
-          scanned: result.scanned,
-          existing: result.existing,
-        }),
+        description:
+          detail +
+          ` ${$t('dashboard.photos.messages.scanImportHint', {
+            root: rootLabel,
+          })}` +
+          conflictsText,
         color: 'info',
       })
     }

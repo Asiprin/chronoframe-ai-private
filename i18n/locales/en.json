@@ -666,7 +666,10 @@
         "scanImportQueued": "Scan complete: {count} new files queued for processing",
         "scanImportDetail": "Scanned {scanned} files, {existing} already in library",
         "scanImportEmpty": "No new files found",
-        "scanImportFailed": "Scan & import failed"
+        "scanImportFailed": "Scan & import failed",
+        "scanImportHint": "Put photos in {root} (same folder as existing photos, subfolders supported)",
+        "scanImportRootLabel": "the storage root folder",
+        "scanImportConflicts": "{count} files share names with existing entries but differ in content; rename them to import"
       },
       "errors": {
         "noSelection": "Please select photos to upload",

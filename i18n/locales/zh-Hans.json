@@ -666,7 +666,10 @@
         "scanImportQueued": "扫描完成：{count} 个新文件已加入处理队列",
         "scanImportDetail": "共扫描 {scanned} 个文件，已存在 {existing} 个",
         "scanImportEmpty": "没有发现新文件",
-        "scanImportFailed": "扫描导入失败"
+        "scanImportFailed": "扫描导入失败",
+        "scanImportHint": "请把照片放入 {root}（与现有照片同一目录，支持子文件夹）",
+        "scanImportRootLabel": "存储目录根文件夹",
+        "scanImportConflicts": "{count} 个文件与库中记录同名但内容不同，如需导入请先重命名"
       },
       "errors": {
         "noSelection": "请选择要上传的照片",
