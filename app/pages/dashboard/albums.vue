@@ -485,7 +485,7 @@ const columns: any[] = [
             <template #description-cell="{ row }">
               <div
                 v-if="(row.original as unknown as AlbumItem).description"
-                class="text-sm text-gray-600 dark:text-gray-400 line-clamp-1"
+                class="w-64 whitespace-normal break-words text-sm text-gray-600 dark:text-gray-400"
               >
                 {{ (row.original as unknown as AlbumItem).description }}
               </div>
