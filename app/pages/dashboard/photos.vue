@@ -1546,8 +1546,11 @@ const photoOrder = computed<'desc' | 'asc'>(() =>
   photoOrderSetting.value === 'asc' ? 'asc' : 'desc',
 )
 
+const photoOrderPending = ref(false)
 const handlePhotoOrderChange = async (val: 'desc' | 'asc') => {
-  if (val === photoOrder.value) return
+  // 进行中锁：UTabs 可能连续触发两次 update，设置缓存刷新前必须拦住第二次
+  if (photoOrderPending.value || val === photoOrder.value) return
+  photoOrderPending.value = true
   try {
     await $fetch('/api/system/settings/batch', {
       method: 'PUT',
@@ -1570,6 +1573,8 @@ const handlePhotoOrderChange = async (val: 'desc' | 'asc') => {
       description: error?.data?.statusMessage || '',
       color: 'error',
     })
+  } finally {
+    photoOrderPending.value = false
   }
 }
 
@@ -3206,7 +3211,8 @@ onUnmounted(() => {
             <!-- 瀑布流排序开关（表格与访客瀑布流联动） -->
             <UTabs
               :model-value="photoOrder"
-              size="sm"
+              size="xs"
+              :ui="{ list: 'h-8' }"
               :items="[
                 {
                   label: $t('dashboard.photos.sort.desc'),
