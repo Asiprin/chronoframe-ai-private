@@ -172,18 +172,60 @@ const handleAITest = async () => {
       },
     })
     toast.add({
-      title: result.success ? (result.vision ? '测试通过' : '注意') : '测试失败',
-      description: result.message,
-      color: result.success ? (result.vision ? 'success' : 'warning') : 'error',
+      title: result.success ? 'API 和模型配置正常' : '请检查 API 和模型配置',
+      description: result.success ? '' : (result.detail || ''),
+      color: result.success ? 'success' : 'error',
     })
   } catch (error: any) {
     toast.add({
-      title: '测试失败',
-      description: error?.data?.statusMessage || error?.message || '未知错误',
+      title: '请检查 API 和模型配置',
+      description: error?.data?.statusMessage || '网络错误',
       color: 'error',
     })
   } finally {
     aiTesting.value = false
+  }
+}
+
+// ===== 加载模型列表 =====
+const modelsLoading = ref(false)
+const modelOptions = ref<Array<{ label: string; value: string }>>([])
+
+const handleLoadModels = async () => {
+  modelsLoading.value = true
+  try {
+    const result = await $fetch('/api/system/settings/ai-models', {
+      method: 'POST',
+      body: {
+        apiBase: aiState.apiBase,
+        apiKey: aiState.apiKey,
+      },
+    })
+    if (result.success && result.models.length > 0) {
+      modelOptions.value = result.models.map((id: string) => ({
+        label: id,
+        value: id,
+      }))
+      toast.add({
+        title: `已加载 ${result.models.length} 个模型`,
+        description: '可在下方列表中选择',
+        color: 'success',
+      })
+    } else {
+      toast.add({
+        title: '加载模型失败',
+        description: result.detail || '',
+        color: 'error',
+      })
+    }
+  } catch (error: any) {
+    toast.add({
+      title: '加载模型失败',
+      description: error?.data?.statusMessage || '网络错误',
+      color: 'error',
+    })
+  } finally {
+    modelsLoading.value = false
   }
 }
 
@@ -362,13 +404,47 @@ const handleSecuritySubmit = async () => {
             class="space-y-4"
             @submit="handleAISubmit"
           >
-            <SettingField
-              v-for="field in visibleAIFields"
-              :key="field.key"
-              :field="field"
-              :model-value="aiState[field.key]"
-              @update:model-value="(val) => (aiState[field.key] = val)"
-            />
+            <template v-for="field in visibleAIFields" :key="field.key">
+              <!-- 模型名称：支持一键加载模型列表选择，也可手动输入 -->
+              <div v-if="field.key === 'model'" class="space-y-2">
+                <div>
+                  <div class="font-medium">模型名称</div>
+                  <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                    用于图片识别的模型（需支持视觉输入）
+                  </p>
+                </div>
+                <div class="flex gap-2">
+                  <UInput
+                    v-model="aiState.model"
+                    class="flex-1"
+                    placeholder="deepseek-flash / glm-4v-flash / qwen-vl-plus / gpt-4o-mini"
+                  />
+                  <UButton
+                    variant="soft"
+                    icon="tabler:refresh"
+                    :loading="modelsLoading"
+                    @click="handleLoadModels"
+                  >
+                    加载模型
+                  </UButton>
+                </div>
+                <USelect
+                  v-if="modelOptions.length > 0"
+                  v-model="aiState.model"
+                  :items="modelOptions"
+                  placeholder="从已加载的模型中选择"
+                />
+                <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                  填好 API 地址和 Key 后点「加载模型」可拉取可选列表
+                </p>
+              </div>
+              <SettingField
+                v-else
+                :field="field"
+                :model-value="aiState[field.key]"
+                @update:model-value="(val) => (aiState[field.key] = val)"
+              />
+            </template>
 
             <USeparator />
 

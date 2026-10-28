@@ -1,5 +1,5 @@
 import sharp from 'sharp'
-import { settingsManager } from '~~/server/services/settings/settingsManager'
+import { settingsManager, SECRET_PLACEHOLDER } from '~~/server/services/settings/settingsManager'
 import { NonRetryableError } from '~~/server/services/pipeline-queue/errors'
 import { logger } from '~~/server/utils/logger'
 
@@ -110,6 +110,41 @@ export async function getActivePromptTemplate(): Promise<PromptTemplate> {
   return (
     templates.find((t) => t.id === activeId) ?? templates[0] ?? DEFAULT_PROMPT_TEMPLATE
   )
+}
+
+/**
+ * 合并表单输入与已保存配置（用于测试/加载模型）。
+ * 表单里未填或填了掩码（••••••••）的密钥自动回退为已保存值，
+ * 各字段允许为空——由调用方决定缺什么算失败。
+ */
+export interface ResolvedAIInput {
+  apiBase?: string
+  apiKey?: string
+  model?: string
+  language: string
+}
+
+export async function resolveAIConfigInput(input?: {
+  apiBase?: unknown
+  apiKey?: unknown
+  model?: unknown
+}): Promise<ResolvedAIInput> {
+  const stored = await getAIConfig()
+
+  const apiBaseRaw =
+    typeof input?.apiBase === 'string' ? input.apiBase.trim() : ''
+  const apiKeyRaw = typeof input?.apiKey === 'string' ? input.apiKey.trim() : ''
+  const modelRaw = typeof input?.model === 'string' ? input.model.trim() : ''
+
+  return {
+    apiBase: apiBaseRaw
+      ? apiBaseRaw.replace(/\/+$/, '')
+      : (stored?.apiBase ?? ''),
+    apiKey:
+      apiKeyRaw && apiKeyRaw !== SECRET_PLACEHOLDER ? apiKeyRaw : (stored?.apiKey ?? ''),
+    model: modelRaw || (stored?.model ?? ''),
+    language: stored?.language ?? 'zh-CN',
+  }
 }
 
 /**
