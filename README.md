@@ -77,6 +77,33 @@
 - **多存储后端** - 支持 S3 兼容存储、本地文件系统
 - **技术栈** - Nuxt 4 + TypeScript + TailwindCSS + Drizzle ORM
 
+## 🚀 安装（其他用户）
+
+**Docker Compose 部署（推荐）**：
+
+```yaml
+services:
+  chronoframe:
+    image: kenv1e/chronoframe:latest
+    container_name: chronoframe
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./data:/app/data        # 照片/数据库/设置全在这里，备份此目录即可
+    environment:
+      TZ: Asia/Shanghai
+```
+
+```bash
+docker compose up -d
+# 打开 http://<NAS IP>:3000 进入初始化向导（创建管理员 → 配置存储 → 配置 AI）
+```
+
+**飞牛 fnOS 应用包**：应用中心 → 右上角「手动安装」→ 选择 `chronoframe_1.0.0_x86.fpk`（安装时自动拉取 Docker Hub 镜像）。
+
+> 镜像目前为 x86_64 架构；数据全部在 `data` 卷中，升级镜像不影响数据。
+
 ## 🐳 快速部署
 
 默认配置下，部署**不需要**传 `.env` 文件或任何环境变量；只要挂载数据目录即可。
