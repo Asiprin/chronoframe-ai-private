@@ -1540,23 +1540,14 @@ const validateFile = (file: File): { valid: boolean; error?: string } => {
 const isScanningImport = ref(false)
 
 // 扫描导入：把直接拷贝进存储目录的媒体文件批量入库
-// ===== 瀑布流排序（全局设置 app.photoOrder） =====
-const photoOrder = ref<'desc' | 'asc'>('desc')
-
-onMounted(async () => {
-  try {
-    const res = await $fetch('/api/system/settings/fields?namespace=app')
-    const field = (res.fields || []).find((f: any) => f.key === 'photoOrder')
-    if (field && (field.value === 'asc' || field.value === 'desc')) {
-      photoOrder.value = field.value
-    }
-  } catch {
-    /* 保持默认 */
-  }
-})
+// ===== 瀑布流排序（全局设置 app.photoOrder，表格与瀑布流联动） =====
+const photoOrderSetting = useSettingRef('app:photoOrder')
+const photoOrder = computed<'desc' | 'asc'>(() =>
+  photoOrderSetting.value === 'asc' ? 'asc' : 'desc',
+)
 
 const handlePhotoOrderChange = async (val: 'desc' | 'asc') => {
-  photoOrder.value = val
+  if (val === photoOrder.value) return
   try {
     await $fetch('/api/system/settings/batch', {
       method: 'PUT',
@@ -1564,6 +1555,8 @@ const handlePhotoOrderChange = async (val: 'desc' | 'asc') => {
         updates: [{ namespace: 'app', key: 'photoOrder', value: val }],
       },
     })
+    await refreshSettings()
+    await refresh()
     toast.add({
       title:
         val === 'asc'
@@ -2833,27 +2826,6 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <div class="flex items-center gap-2">
-                <span class="text-sm text-neutral-500 dark:text-neutral-400">
-                  {{ $t('dashboard.photos.sort.label') }}
-                </span>
-                <UTabs
-                  :model-value="photoOrder"
-                  :items="[
-                    {
-                      label: $t('dashboard.photos.sort.desc'),
-                      value: 'desc',
-                      icon: 'tabler:sort-descending',
-                    },
-                    {
-                      label: $t('dashboard.photos.sort.asc'),
-                      value: 'asc',
-                      icon: 'tabler:sort-ascending',
-                    },
-                  ]"
-                  @update:model-value="handlePhotoOrderChange"
-                />
-              </div>
               <div class="flex gap-2 items-center">
                 <UButton
                   variant="soft"
@@ -3230,6 +3202,25 @@ onUnmounted(() => {
                 $t('dashboard.photos.toolbar.refresh')
               }}</span>
             </UButton>
+
+            <!-- 瀑布流排序开关（表格与访客瀑布流联动） -->
+            <UTabs
+              :model-value="photoOrder"
+              size="sm"
+              :items="[
+                {
+                  label: $t('dashboard.photos.sort.desc'),
+                  value: 'desc',
+                  icon: 'tabler:sort-descending',
+                },
+                {
+                  label: $t('dashboard.photos.sort.asc'),
+                  value: 'asc',
+                  icon: 'tabler:sort-ascending',
+                },
+              ]"
+              @update:model-value="handlePhotoOrderChange"
+            />
 
             <!-- 列可见性按钮 -->
             <UDropdownMenu

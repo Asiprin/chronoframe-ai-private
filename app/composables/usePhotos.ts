@@ -32,17 +32,25 @@ interface PhotosContext {
 const PhotosContextKey = Symbol('PhotosContext') as InjectionKey<PhotosContext>
 
 const sortPhotos = (photos: Photo[]): Photo[] => {
+  // 排序方向跟随全局设置 app.photoOrder（瀑布流与媒体管理表格联动）
+  let dir: 1 | -1 = -1
+  try {
+    dir = useSettingRef('app:photoOrder').value === 'asc' ? 1 : -1
+  } catch {
+    /* 设置未就绪时默认时间降序 */
+  }
   return photos.toSorted((a, b) => {
     if (a.dateTaken && b.dateTaken) {
-      const dateComparison = b.dateTaken.localeCompare(a.dateTaken)
+      const dateComparison = a.dateTaken.localeCompare(b.dateTaken) * dir
       if (dateComparison !== 0) return dateComparison
     } else if (a.dateTaken) {
+      // 无日期的照片恒排末尾
       return -1
     } else if (b.dateTaken) {
       return 1
     }
 
-    return b.id.localeCompare(a.id)
+    return a.id.localeCompare(b.id) * dir
   })
 }
 

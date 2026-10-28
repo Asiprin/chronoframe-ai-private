@@ -76,10 +76,10 @@ export default eventHandler(async (event) => {
   let objects
   try {
     objects = await storageProvider.listAll()
-  } catch (error: any) {
+  } catch {
     throw createError({
       statusCode: 502,
-      statusMessage: `无法从存储服务获取文件列表：${error?.message || '连接失败'}。请检查存储设置（OpenList 需要服务可达，且已配置文件列表端点）`,
+      statusMessage: '无法获取文件列表，请检查存储设置',
     })
   }
 
@@ -116,8 +116,7 @@ export default eventHandler(async (event) => {
   if (objects.length === 0 && existingRows.length > 0) {
     throw createError({
       statusCode: 422,
-      statusMessage:
-        '未能从存储服务获取任何文件列表。请检查存储连接（OpenList 的文件列表端点需可用），或确认照片所在目录配置正确',
+      statusMessage: '未能发现照片文件，请检查存储设置和照片目录',
     })
   }
 
