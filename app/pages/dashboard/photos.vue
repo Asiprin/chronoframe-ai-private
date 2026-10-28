@@ -1537,6 +1537,52 @@ const validateFile = (file: File): { valid: boolean; error?: string } => {
   return { valid: true }
 }
 
+const isScanningImport = ref(false)
+
+// 扫描导入：把直接拷贝进存储目录的媒体文件批量入库
+const handleScanImport = async () => {
+  if (isScanningImport.value) return
+  isScanningImport.value = true
+  try {
+    const result = await $fetch('/api/photos/scan-import', {
+      method: 'POST',
+    })
+    if (result.queued > 0) {
+      toast.add({
+        title: $t('dashboard.photos.messages.scanImportQueued', {
+          count: result.queued,
+        }),
+        description: $t('dashboard.photos.messages.scanImportDetail', {
+          scanned: result.scanned,
+          existing: result.existing,
+        }),
+        color: 'success',
+      })
+    } else {
+      toast.add({
+        title: $t('dashboard.photos.messages.scanImportEmpty'),
+        description: $t('dashboard.photos.messages.scanImportDetail', {
+          scanned: result.scanned,
+          existing: result.existing,
+        }),
+        color: 'info',
+      })
+    }
+  } catch (error: any) {
+    console.error('扫描导入失败:', error)
+    toast.add({
+      title: $t('dashboard.photos.messages.scanImportFailed'),
+      description:
+        error?.data?.statusMessage ||
+        error?.message ||
+        $t('dashboard.photos.messages.error'),
+      color: 'error',
+    })
+  } finally {
+    isScanningImport.value = false
+  }
+}
+
 const handleUpload = async () => {
   const fileList = selectedFiles.value
 
@@ -2725,6 +2771,16 @@ onUnmounted(() => {
               </div>
 
               <div class="flex gap-2 items-center">
+                <UButton
+                  variant="soft"
+                  size="lg"
+                  class="w-full sm:w-auto"
+                  icon="tabler:folder-search"
+                  :loading="isScanningImport"
+                  @click="handleScanImport"
+                >
+                  {{ $t('dashboard.photos.buttons.scanImport') }}
+                </UButton>
                 <UButton
                   variant="soft"
                   size="lg"

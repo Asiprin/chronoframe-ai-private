@@ -518,7 +518,8 @@
       "maxFileSize": "最大 {size}MB",
       "buttons": {
         "upload": "上传照片",
-        "queue": "任务队列"
+        "queue": "任务队列",
+        "scanImport": "扫描导入"
       },
       "uploader": {
         "label": "拖放或点击选择照片",
@@ -661,7 +662,11 @@
         "reverseGeocodeQueued": "已加入重新获取城市任务",
         "reverseGeocodeFailed": "重新获取城市任务添加失败",
         "aiGenerateQueued": "已加入 AI 生成队列",
-        "aiGenerateFailed": "AI 生成任务提交失败"
+        "aiGenerateFailed": "AI 生成任务提交失败",
+        "scanImportQueued": "扫描完成：{count} 个新文件已加入处理队列",
+        "scanImportDetail": "共扫描 {scanned} 个文件，已存在 {existing} 个",
+        "scanImportEmpty": "没有发现新文件",
+        "scanImportFailed": "扫描导入失败"
       },
       "errors": {
         "noSelection": "请选择要上传的照片",

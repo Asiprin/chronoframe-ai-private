@@ -468,7 +468,8 @@
       "maxFileSize": "最大 {size}MB",
       "buttons": {
         "upload": "上傳相片",
-        "queue": "任務佇列"
+        "queue": "任務佇列",
+        "scanImport": "掃描匯入"
       },
       "uploader": {
         "label": "拖曳或點擊選擇相片",
@@ -611,7 +612,11 @@
         "reverseGeocodeQueued": "已新增重新取得城市的任務",
         "reverseGeocodeFailed": "重新取得城市任務新增失敗",
         "aiGenerateQueued": "已加入 AI 產生佇列",
-        "aiGenerateFailed": "AI 產生任務提交失敗"
+        "aiGenerateFailed": "AI 產生任務提交失敗",
+        "scanImportQueued": "掃描完成：{count} 個新檔案已加入處理佇列",
+        "scanImportDetail": "共掃描 {scanned} 個檔案，已存在 {existing} 個",
+        "scanImportEmpty": "沒有發現新檔案",
+        "scanImportFailed": "掃描匯入失敗"
       },
       "errors": {
         "noSelection": "請選擇相片進行上傳",

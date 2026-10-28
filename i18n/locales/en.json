@@ -518,7 +518,8 @@
       "maxFileSize": "Max {size}MB",
       "buttons": {
         "upload": "Upload Photos",
-        "queue": "Task Queue"
+        "queue": "Task Queue",
+        "scanImport": "Scan & Import"
       },
       "uploader": {
         "label": "Drag and drop or click to select photos",
@@ -661,7 +662,11 @@
         "reverseGeocodeQueued": "Reverse geocoding task queued",
         "reverseGeocodeFailed": "Failed to queue reverse geocoding",
         "aiGenerateQueued": "Queued for AI generation",
-        "aiGenerateFailed": "Failed to queue AI generation"
+        "aiGenerateFailed": "Failed to queue AI generation",
+        "scanImportQueued": "Scan complete: {count} new files queued for processing",
+        "scanImportDetail": "Scanned {scanned} files, {existing} already in library",
+        "scanImportEmpty": "No new files found",
+        "scanImportFailed": "Scan & import failed"
       },
       "errors": {
         "noSelection": "Please select photos to upload",
