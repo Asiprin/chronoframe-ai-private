@@ -7,11 +7,21 @@ import type {
 } from '~~/shared/types/settings'
 import type { SettingKey, SettingNamespace } from './contants'
 
+/**
+ * 密钥字段的掩码占位符。
+ * 保存过密钥后，接口返回该掩码而不是真实值；前端提交时如果值仍为掩码，
+ * 保存逻辑（preserveBlankSecretUpdates）会跳过更新，避免覆盖真实密钥。
+ */
+export const SECRET_PLACEHOLDER = '••••••••'
+
 export const redactSecretValue = (
   setting: { isSecret?: boolean | null },
   value: SettingValue,
 ): SettingValue => {
-  return setting.isSecret ? '' : value
+  if (!setting.isSecret) return value
+  // 没保存过密钥时保持为空，避免"空值"被误认为已配置
+  if (typeof value === 'string' && value.trim()) return SECRET_PLACEHOLDER
+  return value
 }
 
 export class SettingsManager {

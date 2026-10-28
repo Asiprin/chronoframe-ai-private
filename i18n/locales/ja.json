@@ -844,7 +844,8 @@
         "video": "動画処理",
         "live-photo-video": "LivePhoto動画",
         "photo-reverse-geocoding": "写真の逆ジオコーディング",
-        "file-encryption": "ファイル暗号化"
+        "file-encryption": "ファイル暗号化",
+        "photo-ai-metadata": "AI 画像理解"
       },
       "stages": {
         "preprocessing": "前処理",
@@ -856,7 +857,8 @@
         "live-photo": "LivePhoto処理",
         "video-metadata": "動画メタデータ",
         "video-thumbnail": "動画サムネイル",
-        "encrypting": "ファイル暗号化"
+        "encrypting": "ファイル暗号化",
+        "ai-metadata": "説明を生成"
       },
       "buttons": {
         "retry": "再試行",
@@ -1174,7 +1176,7 @@
           "off": "オフ",
           "on": "オン"
         },
-        "help": "API ベース URL・API Key・モデル名の設定が必要です。ビジョン対応モデル（GLM-4V-Flash、Qwen-VL、GPT-4o-mini など）を使用してください。テキストのみのモデル（DeepSeek など）は画像を認識できません"
+        "help": "API ベース URL・API Key・モデル名の設定が必要です。ビジョン対応モデル（DeepSeek deepseek-flash、GLM-4V-Flash、Qwen-VL-Plus、GPT-4o-mini など）を使用してください"
       },
       "apiBase": {
         "label": "API ベース URL",
@@ -1189,7 +1191,7 @@
       "model": {
         "label": "モデル名",
         "description": "画像認識に使用するモデル（ビジョン入力対応が必要）",
-        "help": "例: glm-4v-flash（智譜・無料）、qwen-vl-plus、gpt-4o-mini"
+        "help": "例: deepseek-flash、glm-4v-flash（智譜・無料）、qwen-vl-plus、gpt-4o-mini"
       },
       "language": {
         "label": "生成言語",

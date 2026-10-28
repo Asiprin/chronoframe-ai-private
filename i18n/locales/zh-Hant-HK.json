@@ -844,7 +844,8 @@
         "video": "視頻處理",
         "live-photo-video": "LivePhoto視頻",
         "photo-reverse-geocoding": "照片逆地理編碼",
-        "file-encryption": "文件加密"
+        "file-encryption": "文件加密",
+        "photo-ai-metadata": "圖片理解"
       },
       "stages": {
         "preprocessing": "預處理",
@@ -856,7 +857,8 @@
         "live-photo": "LivePhoto處理",
         "video-metadata": "視頻元數據",
         "video-thumbnail": "視頻縮略圖",
-        "encrypting": "文件加密"
+        "encrypting": "文件加密",
+        "ai-metadata": "產生描述"
       },
       "buttons": {
         "retry": "重試",
@@ -1154,7 +1156,7 @@
           "off": "關閉",
           "on": "開啟"
         },
-        "help": "需要填寫 API 位址、API Key 和模型名稱。請使用支援視覺輸入的模型（如 GLM-4V-Flash、Qwen-VL、GPT-4o-mini）；純文字模型（如 DeepSeek）無法識別圖片內容"
+        "help": "需要填寫 API 位址、API Key 和模型名稱。請使用支援視覺輸入的模型（如 DeepSeek deepseek-flash、智譜 glm-4v-flash、通義 qwen-vl-plus、GPT-4o-mini 等）"
       },
       "apiBase": {
         "label": "API 位址",
@@ -1169,7 +1171,7 @@
       "model": {
         "label": "模型名稱",
         "description": "用於圖片識別的模型（需支援視覺輸入）",
-        "help": "例如智譜 glm-4v-flash（免費）、通義 qwen-vl-plus、OpenAI gpt-4o-mini"
+        "help": "例如 DeepSeek deepseek-flash、智譜 glm-4v-flash（免費）、通義 qwen-vl-plus、OpenAI gpt-4o-mini"
       },
       "language": {
         "label": "產生語言",

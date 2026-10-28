@@ -894,7 +894,8 @@
         "video": "Video Processing",
         "live-photo-video": "LivePhoto Video",
         "photo-reverse-geocoding": "Photo Reverse Geocoding",
-        "file-encryption": "File Encryption"
+        "file-encryption": "File Encryption",
+        "photo-ai-metadata": "AI Recognition"
       },
       "stages": {
         "preprocessing": "Preprocessing",
@@ -906,7 +907,8 @@
         "live-photo": "LivePhoto Processing",
         "video-metadata": "Video Metadata",
         "video-thumbnail": "Video Thumbnail",
-        "encrypting": "File Encryption"
+        "encrypting": "File Encryption",
+        "ai-metadata": "Generate Description"
       },
       "buttons": {
         "retry": "Retry",
@@ -1224,7 +1226,7 @@
           "off": "Off",
           "on": "On"
         },
-        "help": "Requires API Base, API Key, and model name. Use a vision-capable model (e.g. GLM-4V-Flash, Qwen-VL, GPT-4o-mini); text-only models (e.g. DeepSeek) cannot see images"
+        "help": "Requires API Base, API Key, and model name. Use a vision-capable model (e.g. DeepSeek deepseek-flash, GLM-4V-Flash, Qwen-VL-Plus, GPT-4o-mini)"
       },
       "apiBase": {
         "label": "API Base URL",
@@ -1239,7 +1241,7 @@
       "model": {
         "label": "Model",
         "description": "Model used for image recognition (must support vision input)",
-        "help": "e.g. glm-4v-flash (free on Zhipu), qwen-vl-plus, gpt-4o-mini"
+        "help": "e.g. deepseek-flash, glm-4v-flash (free on Zhipu), qwen-vl-plus, gpt-4o-mini"
       },
       "language": {
         "label": "Output Language",

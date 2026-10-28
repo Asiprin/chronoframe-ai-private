@@ -894,7 +894,8 @@
         "video": "视频处理",
         "live-photo-video": "LivePhoto视频",
         "photo-reverse-geocoding": "照片逆地理编码",
-        "file-encryption": "文件加密"
+        "file-encryption": "文件加密",
+        "photo-ai-metadata": "图片理解"
       },
       "stages": {
         "preprocessing": "预处理",
@@ -906,7 +907,8 @@
         "live-photo": "LivePhoto处理",
         "video-metadata": "视频元数据",
         "video-thumbnail": "视频缩略图",
-        "encrypting": "文件加密"
+        "encrypting": "文件加密",
+        "ai-metadata": "生成描述"
       },
       "buttons": {
         "retry": "重试",
@@ -1224,7 +1226,7 @@
           "off": "关闭",
           "on": "开启"
         },
-        "help": "需要填写 API 地址、API Key 和模型名称。请使用支持视觉输入的模型（如 GLM-4V-Flash、Qwen-VL、GPT-4o-mini）；纯文本模型（如 DeepSeek）无法识别图片内容"
+        "help": "需要填写 API 地址、API Key 和模型名称。请使用支持视觉输入的模型（如 DeepSeek deepseek-flash、智谱 glm-4v-flash、通义 qwen-vl-plus、GPT-4o-mini 等）"
       },
       "apiBase": {
         "label": "API 地址",
@@ -1239,7 +1241,7 @@
       "model": {
         "label": "模型名称",
         "description": "用于图片识别的模型（需支持视觉输入）",
-        "help": "例如智谱 glm-4v-flash（免费）、通义 qwen-vl-plus、OpenAI gpt-4o-mini"
+        "help": "例如 DeepSeek deepseek-flash、智谱 glm-4v-flash（免费）、通义 qwen-vl-plus、OpenAI gpt-4o-mini"
       },
       "language": {
         "label": "生成语言",

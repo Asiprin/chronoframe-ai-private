@@ -45,6 +45,20 @@ export function closeDB() {
   }
 }
 
+/**
+ * 获取底层 better-sqlite3 实例（用于备份等维护操作）。
+ * 会先确保数据库连接已初始化。
+ */
+export function useSqliteDB(): Database.Database {
+  useDB()
+  return sqliteInstance!
+}
+
+/** 数据库文件路径（与迁移脚本、Drizzle 配置一致） */
+export function getDatabaseFilePath(): string {
+  return DATABASE_FILE_PATH
+}
+
 export type User = typeof schema.users.$inferSelect
 export type Photo = typeof schema.photos.$inferSelect
 

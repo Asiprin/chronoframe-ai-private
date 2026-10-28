@@ -223,6 +223,10 @@ const typeOptions = [
     value: 'photo-reverse-geocoding',
   },
   {
+    label: $t('dashboard.queue.types.photo-ai-metadata'),
+    value: 'photo-ai-metadata',
+  },
+  {
     label: $t('dashboard.queue.types.file-encryption'),
     value: 'file-encryption',
   },

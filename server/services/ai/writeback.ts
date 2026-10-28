@@ -44,6 +44,28 @@ export interface ExifWriteBackResult {
   fileSize: number
 }
 
+/** 给 exiftool 操作加超时保护，避免环境异常时任务永久挂起 */
+async function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`${label} 超时（${ms}ms）`)),
+          ms,
+        )
+      }),
+    ])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 /**
  * 把 AI 生成的标题/描述/标签写回原图 EXIF，并重新上传到存储。
  *
@@ -109,7 +131,11 @@ export async function writeMetadataToExif(options: {
 
   try {
     await writeFile(tempFile, originalBuffer)
-    await exiftool.write(tempFile, exifUpdates, ['-overwrite_original'])
+    await withTimeout(
+      exiftool.write(tempFile, exifUpdates, ['-overwrite_original']),
+      30_000,
+      'EXIF 写入',
+    )
 
     const updatedBuffer = await readFile(tempFile)
     const prefix =
@@ -121,7 +147,11 @@ export async function writeMetadataToExif(options: {
       updatedBuffer,
     )
 
-    const exifData = await extractExifData(updatedBuffer)
+    const exifData = await withTimeout(
+      extractExifData(updatedBuffer),
+      30_000,
+      'EXIF 重新提取',
+    )
     const panoramaExif = preservePanoramaExif(photo.exif)
     const mergedExif =
       exifData || Object.keys(panoramaExif).length > 0

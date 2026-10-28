@@ -34,6 +34,8 @@ const MAX_TAG_COUNT = 64
 const MAX_TAG_LENGTH = 128
 // 送入视觉模型的图片最长边
 const VISION_IMAGE_SIZE = 1280
+// 推理模型（如 deepseek-flash）会把大量 token 耗在 reasoning 上，上限要给足
+const MAX_OUTPUT_TOKENS = 8000
 
 /**
  * 读取 AI 配置。未启用或缺少关键配置时返回 null。
@@ -233,7 +235,7 @@ export async function generatePhotoMetadata(options: {
       body: {
         model: config.model,
         temperature: 0.3,
-        max_tokens: 1000,
+        max_tokens: MAX_OUTPUT_TOKENS,
         messages: [
           {
             role: 'user',
@@ -282,6 +284,14 @@ export async function generatePhotoMetadata(options: {
         : ''
 
   if (!text.trim()) {
+    // 推理模型可能把 token 全部耗在 reasoning_content 上导致正文为空
+    const reasoning = response?.choices?.[0]?.message?.reasoning_content
+    const finishReason = response?.choices?.[0]?.finish_reason
+    if (typeof reasoning === 'string' && reasoning.trim()) {
+      throw new Error(
+        `AI 返回正文为空（推理过程消耗了全部输出额度，finish=${finishReason}），请换用更大的输出额度或非推理模型`,
+      )
+    }
     throw new Error('AI 返回内容为空')
   }
 

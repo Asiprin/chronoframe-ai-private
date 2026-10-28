@@ -5,7 +5,10 @@ import {
   settingKeys,
   settingNamespaces,
 } from '~~/server/services/settings/contants'
-import { settingsManager } from '~~/server/services/settings/settingsManager'
+import {
+  SECRET_PLACEHOLDER,
+  settingsManager,
+} from '~~/server/services/settings/settingsManager'
 import { getGlobalStorageManager } from '~~/server/services/storage/events'
 
 type SettingsBatchUpdate = {
@@ -27,7 +30,7 @@ const preserveBlankSecretUpdates = async (
     if (
       setting?.isSecret &&
       typeof update.value === 'string' &&
-      update.value.trim() === ''
+      (update.value.trim() === '' || update.value === SECRET_PLACEHOLDER)
     ) {
       const currentValue = await settingsManager.get(update.namespace, update.key)
       if (typeof currentValue === 'string' && currentValue.trim()) {

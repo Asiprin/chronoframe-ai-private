@@ -216,7 +216,7 @@ export const AI_SETTINGS_UI: Record<string, FieldUIConfig> = {
   },
   model: {
     type: 'input',
-    placeholder: 'glm-4v-flash / qwen-vl-plus / gpt-4o-mini',
+    placeholder: 'deepseek-flash / glm-4v-flash / qwen-vl-plus / gpt-4o-mini',
     visibleIf: { fieldKey: 'enabled', value: true },
     help: 'settings.ai.model.help',
   },

@@ -156,6 +156,10 @@ export default defineNuxtConfig({
         '@aws-crypto/',
         '@aws-sdk/client-s3',
         '@aws-sdk/s3-request-presigner',
+        // vue-maplibre-gl 在 SSR 中具名导入 maplibre-gl（CJS），
+        // 外置后 Node 无法解析具名导出导致 500，内联由 Rollup 处理互操作。
+        '@indoorequal/vue-maplibre-gl',
+        'maplibre-gl',
         // 开发态由 Nitro 外部化 Smithy CJS，避免 Rollup 转换 Node 内置模块失败。
         ...(IS_PRODUCTION
           ? [
@@ -190,6 +194,11 @@ export default defineNuxtConfig({
 
   vite: {
     plugins: [tailwindcss() as any],
+    ssr: {
+      // vue-maplibre-gl 在 SSR 中具名导入 maplibre-gl（CJS），
+      // Vite SSR 外置后 Node 无法解析具名导出导致 500，需强制打包。
+      noExternal: ['maplibre-gl', '@indoorequal/vue-maplibre-gl'],
+    },
     optimizeDeps: {
       include: [
         'zod',
