@@ -2440,20 +2440,28 @@ const confirmDelete = async () => {
         description: $t('dashboard.photos.messages.deleteSuccess'),
         color: 'info',
       })
-      await Promise.all(
+      const deleteResults = await Promise.all(
         targetPhotos.map((photo) =>
           $fetch(`/api/photos/${photo.id}`, {
             method: 'DELETE',
           }),
         ),
       )
+      const failedCount = deleteResults.filter(
+        (r: any) => (r?.failedFiles?.length ?? 0) > 0,
+      ).length
 
       toast.update(deleteToast.id, {
         title: $t('dashboard.photos.messages.batchDeleteSuccess', {
           count: targetPhotos.length,
         }),
-        description: '',
-        color: 'success',
+        description:
+          failedCount > 0
+            ? $t('dashboard.photos.messages.deleteFilesFailed', {
+                count: failedCount,
+              })
+            : '',
+        color: failedCount > 0 ? 'warning' : 'success',
       })
 
       rowSelection.value = {}
@@ -2463,14 +2471,19 @@ const confirmDelete = async () => {
         throw new Error($t('dashboard.photos.messages.error'))
       }
 
-      await $fetch(`/api/photos/${photo.id}`, {
+      const deleteResult: any = await $fetch(`/api/photos/${photo.id}`, {
         method: 'DELETE',
       })
+      const hasFailedFiles = (deleteResult?.failedFiles?.length ?? 0) > 0
 
       toast.add({
         title: $t('dashboard.photos.messages.deleteSuccess'),
-        description: '',
-        color: 'success',
+        description: hasFailedFiles
+          ? $t('dashboard.photos.messages.deleteFilesFailed', {
+              count: deleteResult.failedFiles.length,
+            })
+          : '',
+        color: hasFailedFiles ? 'warning' : 'success',
       })
     }
 

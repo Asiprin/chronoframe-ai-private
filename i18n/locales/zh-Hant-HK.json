@@ -615,13 +615,14 @@
         "aiGenerateFailed": "AI 產生任務提交失敗",
         "scanImportQueued": "掃描完成：{count} 個新檔案已加入處理佇列",
         "scanImportDetail": "共掃描 {scanned} 個檔案，已存在 {existing} 個",
-        "scanImportEmpty": "沒有發現新檔案",
+        "scanImportEmpty": "沒有新增的圖片",
         "scanImportFailed": "掃描匯入失敗",
         "scanImportHint": "請把照片放入 {root}（與現有照片同一目錄，支援子資料夾）",
         "scanImportRootLabel": "儲存根目錄",
         "scanImportConflicts": "{count} 個檔案與庫中記錄同名但內容不同，如需匯入請先重新命名",
         "aiGenerateOverwriteHint": "將重新產生並覆蓋現有標題、描述和標籤",
-        "scanImportAiQueued": "{count} 張缺少描述的已有照片已加入 AI 產生佇列"
+        "scanImportAiQueued": "{count} 張缺少描述的已有照片已加入 AI 產生佇列",
+        "deleteFilesFailed": "{count} 個檔案未能從儲存刪除，仍保留在儲存中"
       },
       "errors": {
         "noSelection": "請選擇相片進行上傳",

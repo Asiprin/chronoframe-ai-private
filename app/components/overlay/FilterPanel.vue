@@ -12,40 +12,50 @@ const {
 } = usePhotoFilters()
 
 // 编辑标签模式：标签角标 × 可把该标签从照片中删除（照片信息面板同步移除）
-const { photos, refresh } = usePhotos()
+const { photos, refresh, patchPhotoTags } = usePhotos()
 const toast = useToast()
 const { loggedIn } = useUserSession()
 const isTagEditMode = ref(false)
 const deletingTag = ref<string | null>(null)
 
-const handleDeleteTag = async (tag: string) => {
-  if (deletingTag.value) return
-  deletingTag.value = tag
-  try {
-    const targets = photos.value.filter((p) => (p.tags || []).includes(tag))
-    for (const photo of targets) {
-      const nextTags = (photo.tags || []).filter((t) => t !== tag)
-      await $fetch(`/api/photos/${encodeURIComponent(photo.id)}`, {
-        method: 'PUT',
-        body: { tags: nextTags },
-      })
-    }
-    await refresh()
-    toast.add({
-      title: `已删除标签「${tag}」`,
-      description:
-        targets.length > 0 ? `已从 ${targets.length} 张照片中移除` : '',
-      color: 'success',
-    })
-  } catch (error: any) {
-    toast.add({
-      title: '删除标签失败',
-      description: error?.data?.statusMessage || error?.message || '',
-      color: 'error',
-    })
-  } finally {
-    deletingTag.value = null
+const handleDeleteTag = (tag: string) => {
+  // 乐观移除：所有标签展示立即消失，照片上的标签在后台异步删除
+  const targets = photos.value.filter((p) => (p.tags || []).includes(tag))
+  for (const photo of targets) {
+    patchPhotoTags(
+      photo.id,
+      (photo.tags || []).filter((t) => t !== tag),
+    )
   }
+  toast.add({
+    title: `已删除标签「${tag}」`,
+    description:
+      targets.length > 0 ? `已从 ${targets.length} 张照片中移除` : '',
+    color: 'success',
+  })
+
+  // 后台同步：逐张更新照片标签，失败才提示并恢复真实状态
+  void (async () => {
+    const results = await Promise.allSettled(
+      targets.map((photo) =>
+        $fetch(`/api/photos/${encodeURIComponent(photo.id)}`, {
+          method: 'PUT',
+          body: {
+            tags: (photo.tags || []).filter((t) => t !== tag),
+          },
+        }),
+      ),
+    )
+    const failed = results.filter((r) => r.status === 'rejected').length
+    if (failed > 0) {
+      toast.add({
+        title: '部分照片标签删除失败',
+        description: `${failed} 张未能同步，已恢复显示`,
+        color: 'warning',
+      })
+      await refresh()
+    }
+  })()
 }
 
 const currentTab = ref('labels')

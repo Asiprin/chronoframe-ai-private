@@ -446,10 +446,12 @@ export const deriveTitleFromFileName = (s3key: string): string => {
 export const extractPhotoInfo = (
   s3key: string,
   exifData?: NeededExif | null,
+  options?: { fallbackDate?: string | null },
 ): PhotoInfo => {
   const fileName = path.basename(s3key, path.extname(s3key))
 
-  let dateTaken = new Date().toISOString()
+  // 重处理时优先保留库里的拍摄日期（EXIF 无日期时不回退为「现在」）
+  let dateTaken = options?.fallbackDate || new Date().toISOString()
   const tagsSet = new Set<string>()
 
   for (const tag of collectTextValues(exifData?.Subject)) {
@@ -478,9 +480,19 @@ export const extractPhotoInfo = (
       )
     }
   } else {
-    const dateMatch = fileName.match(/(\d{4}-\d{2}-\d{2})/)
-    if (dateMatch) {
-      dateTaken = new Date(dateMatch[1]).toISOString()
+    // 文件名日期：支持 2026-03-28 与 20260328（如 MVIMG_20260328_151530）
+    const dashed = fileName.match(/(\d{4}-\d{2}-\d{2})/)
+    const compact = fileName.match(/(\d{4})(\d{2})(\d{2})/)
+    const iso = dashed
+      ? dashed[1]
+      : compact
+        ? `${compact[1]}-${compact[2]}-${compact[3]}`
+        : null
+    if (iso) {
+      const parsed = new Date(iso)
+      if (!Number.isNaN(parsed.getTime())) {
+        dateTaken = parsed.toISOString()
+      }
     }
   }
 

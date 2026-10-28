@@ -615,13 +615,14 @@
         "aiGenerateFailed": "AI 生成タスクの追加に失敗しました",
         "scanImportQueued": "スキャン完了：{count} 件の新規ファイルを処理キューに追加しました",
         "scanImportDetail": "{scanned} 件をスキャン、{existing} 件は登録済み",
-        "scanImportEmpty": "新しいファイルは見つかりませんでした",
+        "scanImportEmpty": "新しい画像はありません",
         "scanImportFailed": "スキャン取込に失敗しました",
         "scanImportHint": "写真を {root}（既存写真と同じフォルダ、サブフォルダ対応）に入れてください",
         "scanImportRootLabel": "ストレージのルートフォルダ",
         "scanImportConflicts": "{count} 件のファイルが既存エントリと同名ですが内容が異なります。取り込むにはリネームしてください",
         "aiGenerateOverwriteHint": "既存のタイトル・説明・タグを再生成して上書きします",
-        "scanImportAiQueued": "説明のない既存写真 {count} 件を AI 生成キューに追加しました"
+        "scanImportAiQueued": "説明のない既存写真 {count} 件を AI 生成キューに追加しました",
+        "deleteFilesFailed": "{count} 件のファイルをストレージから削除できませんでした（残っています）"
       },
       "errors": {
         "noSelection": "アップロードする写真を選択してください",

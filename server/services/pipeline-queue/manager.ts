@@ -367,7 +367,14 @@ export class QueueManager {
               ? { ...(exifData ?? {}), ...panoramaExifPatch }
               : null
 
-          const photoInfo = extractPhotoInfo(storageKey, mergedExif)
+          const existingDateRow = await useDB()
+            .select({ dateTaken: tables.photos.dateTaken })
+            .from(tables.photos)
+            .where(eq(tables.photos.id, photoId))
+            .get()
+          const photoInfo = extractPhotoInfo(storageKey, mergedExif, {
+            fallbackDate: existingDateRow?.dateTaken || null,
+          })
 
           // STEP 5: 地理位置反向解析
           // 这里逆编码失败不报错，宽容处理
@@ -1036,11 +1043,31 @@ export class QueueManager {
             'image/webp',
           )
 
+          // 同名照片已占用该主键时（jpg/mp4 同名撞主键），视频不得覆盖照片行
+          const existingRow = await useDB()
+            .select({
+              isVideo: tables.photos.isVideo,
+              dateTaken: tables.photos.dateTaken,
+            })
+            .from(tables.photos)
+            .where(eq(tables.photos.id, photoId))
+            .get()
+          if (existingRow && existingRow.isVideo !== 1) {
+            this.logger.warn(
+              `[${taskId}] 同名照片已存在（${photoId}），跳过视频入库：${storageKey}`,
+            )
+            return
+          }
+
           const result: Photo = {
             id: photoId,
             title: path.basename(storageKey, path.extname(storageKey)),
             description: null,
-            dateTaken: storageObject.lastModified?.toISOString() || new Date().toISOString(),
+            // 重处理/重扫时保留原拍摄日期，避免文件修改时间覆盖拍摄时间
+            dateTaken:
+              existingRow?.dateTaken ||
+              storageObject.lastModified?.toISOString() ||
+              new Date().toISOString(),
             tags: null,
             width: metadata.width,
             height: metadata.height,

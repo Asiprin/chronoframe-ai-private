@@ -24,6 +24,7 @@ interface PhotosContext {
   loadPhotoDetails: (id: string) => Promise<Photo>
   getPhotoById: (id: string) => DisplayPhoto | undefined
   filterPhotos: (predicate: (photo: DisplayPhoto) => boolean) => DisplayPhoto[]
+  patchPhotoTags: (photoId: string, tags: string[]) => void
   totalCount: Readonly<Ref<number>>
   loadedCount: ComputedRef<number>
   hasMore: ComputedRef<boolean>
@@ -179,6 +180,12 @@ export function providePhotos(): PhotosContext {
     loadMore,
     loadPhotoDetails,
     getPhotoById: (id: string) => findDisplayPhotoById(photos.value, id),
+    patchPhotoTags: (photoId: string, tags: string[]) => {
+      const target = rawPhotos.value.find((p) => p.id === photoId)
+      if (target) {
+        target.tags = tags
+      }
+    },
     filterPhotos: (predicate: (photo: DisplayPhoto) => boolean) => {
       return photos.value.filter(predicate)
     },

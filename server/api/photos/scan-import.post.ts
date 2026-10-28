@@ -1,5 +1,7 @@
 import path from 'node:path'
-import { and, eq, isNull, or, sql } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
+import { generateSafePhotoId } from '~~/server/utils/file-utils'
+import { deriveTitleFromFileName } from '~~/server/services/image/exif'
 
 /**
  * 扫描导入：把直接拷贝进存储目录的媒体文件批量入库。
@@ -103,16 +105,19 @@ export default eventHandler(async (event) => {
     })
   const candidateSet = new Set(candidateKeys)
 
-  // 2. 与数据库比对，找出未入库的文件（归一化 key，容忍前导斜杠差异）
+  // 2. 与数据库比对（多键去重：任一文件键命中即视为已入库）
   const db = useDB()
   const existingRows = await db
     .select({
+      id: tables.photos.id,
       storageKey: tables.photos.storageKey,
+      thumbnailKey: tables.photos.thumbnailKey,
+      livePhotoVideoKey: tables.photos.livePhotoVideoKey,
       fileSize: tables.photos.fileSize,
     })
     .from(tables.photos)
 
-  // 存储里一个文件都没枚举到、库里却有照片 → 多半是存储列表不可用，给明确报错
+  // 存储里一个文件都没枚举到、库里却有照片 → 大概率是存储列表不可用，给明确报错
   if (objects.length === 0 && existingRows.length > 0) {
     throw createError({
       statusCode: 422,
@@ -120,30 +125,75 @@ export default eventHandler(async (event) => {
     })
   }
 
-  const existingMap = new Map(
-    existingRows.map((row) => [normalizeKey(row.storageKey), row.fileSize]),
-  )
+  // 库内全部文件键（原图/缩略图/实况视频），以及 storageKey→大小（冲突检测用）
+  const knownKeys = new Set<string>()
+  const storageKeySizes = new Map<string, number | null>()
+  for (const row of existingRows) {
+    for (const k of [
+      row.storageKey,
+      row.thumbnailKey,
+      row.livePhotoVideoKey,
+    ]) {
+      if (typeof k === 'string' && k) knownKeys.add(normalizeKey(k))
+    }
+    if (row.storageKey) {
+      storageKeySizes.set(normalizeKey(row.storageKey), row.fileSize ?? null)
+    }
+  }
+
+  // photoId 判定：jpg/mp4 等同名文件会生成同一 photoId（库中已有即绝不重复导入）
+  const knownIds = new Set(existingRows.map((row) => row.id))
+
+  // 任务记录判定（任意状态，含已完成/失败/排队中）：进过队列的文件不再重复入队
+  const taskRows = await db
+    .select({ payload: tables.pipelineQueue.payload })
+    .from(tables.pipelineQueue)
+  const taskKeys = new Set<string>()
+  const aiTaskPhotoIds = new Set<string>()
+  for (const row of taskRows) {
+    const payload = row.payload as Record<string, unknown> | null
+    if (!payload || typeof payload !== 'object') continue
+    if (typeof payload.storageKey === 'string' && payload.storageKey) {
+      taskKeys.add(normalizeKey(payload.storageKey))
+    }
+    if (
+      payload.type === 'photo-ai-metadata' &&
+      typeof payload.photoId === 'string'
+    ) {
+      aiTaskPhotoIds.add(payload.photoId)
+    }
+  }
+
   // 同名同大小指纹（文件键前缀错位时防重复导入已有照片）
   const existingFingerprints = new Set(
     existingRows
       .filter((row) => typeof row.fileSize === 'number')
       .map(
-        (row) => `${path.basename(normalizeKey(row.storageKey))}|${row.fileSize}`,
+        (row) =>
+          `${path.basename(normalizeKey(row.storageKey || ''))}|${row.fileSize}`,
       ),
   )
 
-  // 实况照片配对集合：同目录同名的图片（照抄上传分类器的语义）
-  const liveImagePairIds = new Set(
-    candidateKeys
-      .filter((key) => LIVE_PHOTO_IMAGE_EXTENSIONS.has(getExtension(key)))
-      .map((key) => getPairId(key)),
+  // 图片同名（含库内）判定：用于伴生视频归类
+  const imageStems = new Set(
+    [...candidateKeys, ...knownKeys]
+      .filter((key) =>
+        LIVE_PHOTO_IMAGE_EXTENSIONS.has(getExtension(String(key))),
+      )
+      .map((key) => getPairId(String(key))),
   )
 
   const classify = (key: string): ScanTaskType => {
     const ext = getExtension(key)
-    if (VIDEO_EXTENSIONS.has(ext)) return 'video'
-    if (LIVE_PHOTO_VIDEO_EXTENSIONS.has(ext)) {
-      return liveImagePairIds.has(getPairId(key)) ? 'live-photo-video' : 'video'
+    if (
+      VIDEO_EXTENSIONS.has(ext) ||
+      LIVE_PHOTO_VIDEO_EXTENSIONS.has(ext)
+    ) {
+      // 同名图片存在 → 伴生视频（Motion Photo/Live Photo 的视频部分），
+      // 归为实况视频配对，不作为独立视频入库
+      return imageStems.has(getPairId(key))
+        ? 'live-photo-video'
+        : 'video'
     }
     return 'photo'
   }
@@ -154,8 +204,19 @@ export default eventHandler(async (event) => {
   for (const obj of objects) {
     const storageKey = obj.key
     if (!candidateSet.has(storageKey)) continue
-    const hit = existingMap.get(normalizeKey(storageKey))
-    if (hit !== undefined) {
+    const normKey = normalizeKey(storageKey)
+
+    // 四重判定，任一命中即视为已入库/已排队：
+    // ① 库内文件键（原图/缩略图/实况视频） ② photoId（同名文件撞同 id）
+    // ③ 任务记录（进过队列的文件，含已完成/失败） ④ 同名同大小指纹（键错位兜底）
+    const inLibrary = knownKeys.has(normKey)
+    const hit = storageKeySizes.get(normKey)
+    if (
+      inLibrary ||
+      hit !== undefined ||
+      knownIds.has(generateSafePhotoId(storageKey)) ||
+      taskKeys.has(normKey)
+    ) {
       existingCount += 1
       // 同名但大小与入库记录不同 → 大概率是另一个文件，需重命名才能导入
       if (typeof hit === 'number' && obj.size != null && hit !== obj.size) {
@@ -163,8 +224,7 @@ export default eventHandler(async (event) => {
       }
       continue
     }
-    // 键不匹配但同名同大小 → 已入库照片（存储键前缀错位），绝不重复导入
-    const fingerprint = `${path.basename(normalizeKey(storageKey))}|${obj.size ?? -1}`
+    const fingerprint = `${path.basename(normKey)}|${obj.size ?? -1}`
     if (existingFingerprints.has(fingerprint)) {
       existingCount += 1
       continue
@@ -200,19 +260,23 @@ export default eventHandler(async (event) => {
   // 3. AI 补全：库里缺少描述的照片（含刚导入的走照片管线自动生成）。
   // 只投"补空字段"任务（不带 force）——已编辑描述的照片天然被跳过。
   const needAiRows = await db
-    .select({ id: tables.photos.id })
+    .select({
+      id: tables.photos.id,
+      storageKey: tables.photos.storageKey,
+      title: tables.photos.title,
+      description: tables.photos.description,
+    })
     .from(tables.photos)
-    .where(
-      and(
-        or(
-          isNull(tables.photos.description),
-          eq(tables.photos.description, ''),
-        ),
-        sql`COALESCE(${tables.photos.isVideo}, 0) != 1`,
-      ),
-    )
+    .where(sql`COALESCE(${tables.photos.isVideo}, 0) != 1`)
   let aiQueued = 0
   for (const row of needAiRows) {
+    // 只处理"未生成标题和描述"的照片（缺标题或缺描述），
+    // 已处理过/已有任务记录的绝不重复入队
+    const missingTitle =
+      !row.title || row.title === deriveTitleFromFileName(row.storageKey || '')
+    const missingDescription = !row.description
+    if (!missingTitle && !missingDescription) continue
+    if (aiTaskPhotoIds.has(row.id)) continue
     await workerPool.addTask(
       { type: 'photo-ai-metadata', photoId: row.id },
       { priority: 1, maxAttempts: 3 },
