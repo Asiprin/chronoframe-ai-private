@@ -669,7 +669,8 @@
         "scanImportFailed": "扫描导入失败",
         "scanImportHint": "请把照片放入 {root}（与现有照片同一目录，支持子文件夹）",
         "scanImportRootLabel": "存储目录根文件夹",
-        "scanImportConflicts": "{count} 个文件与库中记录同名但内容不同，如需导入请先重命名"
+        "scanImportConflicts": "{count} 个文件与库中记录同名但内容不同，如需导入请先重命名",
+        "aiGenerateOverwriteHint": "将重新生成并覆盖现有标题、描述和标签"
       },
       "errors": {
         "noSelection": "请选择要上传的照片",

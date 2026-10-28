@@ -29,6 +29,7 @@ export default defineEventHandler(async (event) => {
       z.object({
         type: z.literal('photo-ai-metadata'),
         photoId: z.string().min(1),
+        force: z.boolean().optional(),
       }),
       z.object({
         type: z.literal('file-encryption'),

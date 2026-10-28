@@ -619,7 +619,8 @@
         "scanImportFailed": "スキャン取込に失敗しました",
         "scanImportHint": "写真を {root}（既存写真と同じフォルダ、サブフォルダ対応）に入れてください",
         "scanImportRootLabel": "ストレージのルートフォルダ",
-        "scanImportConflicts": "{count} 件のファイルが既存エントリと同名ですが内容が異なります。取り込むにはリネームしてください"
+        "scanImportConflicts": "{count} 件のファイルが既存エントリと同名ですが内容が異なります。取り込むにはリネームしてください",
+        "aiGenerateOverwriteHint": "既存のタイトル・説明・タグを再生成して上書きします"
       },
       "errors": {
         "noSelection": "アップロードする写真を選択してください",

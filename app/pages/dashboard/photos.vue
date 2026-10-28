@@ -2072,6 +2072,7 @@ const handleAiGenerateRequest = async (photo: Photo) => {
         payload: {
           type: 'photo-ai-metadata',
           photoId: photo.id,
+          force: true,
         },
         priority: 1,
         maxAttempts: 3,
@@ -2082,11 +2083,12 @@ const handleAiGenerateRequest = async (photo: Photo) => {
       toast.add({
         title: $t('dashboard.photos.messages.aiGenerateQueued'),
         description:
-          typeof result.taskId === 'number'
-            ? $t('dashboard.photos.messages.reprocessTaskId', {
+          $t('dashboard.photos.messages.aiGenerateOverwriteHint') +
+          (typeof result.taskId === 'number'
+            ? ` · ${$t('dashboard.photos.messages.reprocessTaskId', {
                 taskId: result.taskId,
-              })
-            : '',
+              })}`
+            : ''),
         color: 'success',
       })
     } else {
@@ -2153,6 +2155,7 @@ const handleBatchAiGenerate = async () => {
           payload: {
             type: 'photo-ai-metadata',
             photoId: photo.id,
+            force: true,
           },
           priority: 1,
           maxAttempts: 3,
@@ -3338,7 +3341,7 @@ onUnmounted(() => {
 
         <UModal v-model:open="isEditModalOpen">
           <template #content>
-            <div class="p-6 space-y-6">
+            <div class="max-h-[85dvh] space-y-6 overflow-y-auto p-6">
               <div class="space-y-1">
                 <h2
                   class="text-lg font-semibold text-neutral-800 dark:text-neutral-100"

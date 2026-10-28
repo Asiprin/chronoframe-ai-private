@@ -609,6 +609,60 @@ const onStorageDelete = async (storageId: number) => {
     })
   }
 }
+// ===== 存储键迁移（高级） =====
+const migrateState = reactive({
+  fromPrefix: '',
+  toPrefix: '',
+})
+const migrateLoading = ref(false)
+const migrateResult = ref<{
+  dryRun: boolean
+  affectedRows: number
+  totalKeys: number
+  samples: Array<{ column: string; before: string; after: string }>
+} | null>(null)
+
+const runMigrate = async (dryRun: boolean) => {
+  if (!migrateState.fromPrefix.trim()) {
+    toast.add({ title: '请填写要替换的键前缀', color: 'warning' })
+    return
+  }
+  migrateLoading.value = true
+  try {
+    const result = await $fetch('/api/system/storage/migrate-keys', {
+      method: 'POST',
+      body: {
+        fromPrefix: migrateState.fromPrefix,
+        toPrefix: migrateState.toPrefix,
+        dryRun,
+      },
+    })
+    migrateResult.value = result
+    if (!dryRun) {
+      toast.add({
+        title: `已迁移 ${result.affectedRows} 条记录（${result.totalKeys} 个文件键）`,
+        color: 'success',
+      })
+    }
+  } catch (error: any) {
+    toast.add({
+      title: '存储键迁移失败',
+      description: error?.data?.statusMessage || '网络错误',
+      color: 'error',
+    })
+  } finally {
+    migrateLoading.value = false
+  }
+}
+
+const handleMigratePreview = () => runMigrate(true)
+const handleMigrateApply = () => {
+  if (!window.confirm('确定按当前规则重写存储键吗？建议先「预览」确认影响范围。')) {
+    return
+  }
+  runMigrate(false)
+}
+
 </script>
 
 <template>
@@ -930,6 +984,72 @@ const onStorageDelete = async (storageId: number) => {
               />
             </template>
           </USlideover>
+        </UCard>
+
+        <UCard variant="outline">
+          <template #header>
+            <span>存储键迁移（高级）</span>
+          </template>
+          <div class="space-y-4">
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">
+              更换存储方案后（如 OpenList → 本地），历史文件键可能带有旧存储的路径前缀，
+              导致按新方案找不到文件。此工具批量重写照片的存储键前缀。
+              先「预览」确认影响范围，再「执行迁移」。
+            </p>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <UFormField label="要替换的前缀">
+                <UInput
+                  v-model="migrateState.fromPrefix"
+                  class="w-full"
+                  placeholder="如 NAS/File/files/"
+                />
+              </UFormField>
+              <UFormField label="新前缀（可留空 = 直接去掉）">
+                <UInput
+                  v-model="migrateState.toPrefix"
+                  class="w-full"
+                  placeholder="如 photos"
+                />
+              </UFormField>
+            </div>
+            <div class="flex gap-2">
+              <UButton
+                variant="soft"
+                icon="tabler:eye"
+                :loading="migrateLoading"
+                @click="handleMigratePreview"
+              >
+                预览
+              </UButton>
+              <UButton
+                color="warning"
+                variant="soft"
+                icon="tabler:transfer-in"
+                :loading="migrateLoading"
+                :disabled="!migrateResult?.dryRun"
+                @click="handleMigrateApply"
+              >
+                执行迁移
+              </UButton>
+            </div>
+            <div
+              v-if="migrateResult"
+              class="space-y-2 rounded-lg border border-neutral-200 p-3 text-sm dark:border-neutral-800"
+            >
+              <div>
+                {{ migrateResult.dryRun ? '预览' : '已完成' }}：影响
+                <b>{{ migrateResult.affectedRows }}</b> 条记录、共
+                <b>{{ migrateResult.totalKeys }}</b> 个文件键
+              </div>
+              <div
+                v-for="(s, i) in migrateResult.samples"
+                :key="i"
+                class="text-xs text-neutral-500 dark:text-neutral-400"
+              >
+                [{{ s.column }}] {{ s.before }} → {{ s.after }}
+              </div>
+            </div>
+          </div>
         </UCard>
       </div>
     </template>

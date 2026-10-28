@@ -35,6 +35,8 @@ type PipelineQueuePayload =
   | {
       type: 'photo-ai-metadata'
       photoId: string
+      /** 手动触发时为 true：覆盖已有标题/描述/标签（显式意图） */
+      force?: boolean
     }
   | {
       type: 'file-encryption'

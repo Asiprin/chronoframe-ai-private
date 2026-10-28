@@ -719,7 +719,8 @@ export class QueueManager {
           }
 
           const overwrite =
-            (await settingsManager.get<boolean>('ai', 'overwrite')) ?? false
+            payload.force === true ||
+            ((await settingsManager.get<boolean>('ai', 'overwrite')) ?? false)
 
           // 标题可能只是上传时从文件名派生的默认值，视为"未填写"
           const defaultTitle = photo.storageKey
