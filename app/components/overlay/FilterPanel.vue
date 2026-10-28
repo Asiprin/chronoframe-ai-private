@@ -11,7 +11,42 @@ const {
   activeFilters,
 } = usePhotoFilters()
 
-const { shufflePhotos } = usePhotoSort()
+// 编辑标签模式：标签角标 × 可把该标签从照片中删除（照片信息面板同步移除）
+const { photos, refresh } = usePhotos()
+const toast = useToast()
+const { loggedIn } = useUserSession()
+const isTagEditMode = ref(false)
+const deletingTag = ref<string | null>(null)
+
+const handleDeleteTag = async (tag: string) => {
+  if (deletingTag.value) return
+  deletingTag.value = tag
+  try {
+    const targets = photos.value.filter((p) => (p.tags || []).includes(tag))
+    for (const photo of targets) {
+      const nextTags = (photo.tags || []).filter((t) => t !== tag)
+      await $fetch(`/api/photos/${encodeURIComponent(photo.id)}`, {
+        method: 'PUT',
+        body: { tags: nextTags },
+      })
+    }
+    await refresh()
+    toast.add({
+      title: `已删除标签「${tag}」`,
+      description:
+        targets.length > 0 ? `已从 ${targets.length} 张照片中移除` : '',
+      color: 'success',
+    })
+  } catch (error: any) {
+    toast.add({
+      title: '删除标签失败',
+      description: error?.data?.statusMessage || error?.message || '',
+      color: 'error',
+    })
+  } finally {
+    deletingTag.value = null
+  }
+}
 
 const currentTab = ref('labels')
 const isSearchMode = ref(false)
@@ -79,9 +114,6 @@ const handleToggleFilter = (type: string, value: string | number) => {
   toggleFilter(type as any, value)
 }
 
-const onShuffle = () => {
-  shufflePhotos()
-}
 </script>
 
 <template>
@@ -141,13 +173,13 @@ const onShuffle = () => {
           icon="tabler:search"
           @click="isSearchMode = true"
         />
-        <UTooltip text="打乱列表">
+        <UTooltip v-if="loggedIn" :text="isTagEditMode ? '完成编辑' : '编辑标签'">
           <UButton
             size="sm"
             variant="ghost"
-            color="neutral"
-            icon="tabler:dice-3"
-            @click="onShuffle"
+            :color="isTagEditMode ? 'primary' : 'neutral'"
+            icon="tabler:pencil"
+            @click="isTagEditMode = !isTagEditMode"
           />
         </UTooltip>
       </div>
@@ -171,20 +203,38 @@ const onShuffle = () => {
       <!-- 标签面板 -->
       <template #tags>
         <div class="space-y-0.5 max-h-64 overflow-y-auto">
-          <div class="flex flex-wrap gap-1">
-            <UBadge
+          <div class="flex flex-wrap gap-2">
+            <div
               v-for="tag in availableFilters.tags"
               :key="tag.label"
-              :label="tag.label"
-              :color="isFilterSelected('tags', tag.label) ? 'info' : 'neutral'"
-              :trailing-icon="
-                isFilterSelected('tags', tag.label) ? 'tabler:check' : ''
-              "
-              variant="soft"
-              class="cursor-pointer select-none transition-colors"
-              :class="`${isFilterSelected('tags', tag.label) ? '' : 'bg-neutral-800/10 text-neutral-800 hover:bg-neutral-800/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20'}`"
-              @click="handleToggleFilter('tags', tag.label)"
-            />
+              class="relative"
+            >
+              <UBadge
+                :label="tag.label"
+                :color="isFilterSelected('tags', tag.label) ? 'info' : 'neutral'"
+                :trailing-icon="
+                  isTagEditMode
+                    ? ''
+                    : isFilterSelected('tags', tag.label)
+                      ? 'tabler:check'
+                      : ''
+                "
+                variant="soft"
+                class="cursor-pointer select-none transition-colors"
+                :class="`${isFilterSelected('tags', tag.label) ? '' : 'bg-neutral-800/10 text-neutral-800 hover:bg-neutral-800/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20'}`"
+                @click="!isTagEditMode && handleToggleFilter('tags', tag.label)"
+              />
+              <!-- 编辑标签模式：角标 × 删除该标签 -->
+              <button
+                v-if="isTagEditMode"
+                type="button"
+                class="absolute -right-1.5 -top-1.5 flex size-3.5 items-center justify-center rounded-full bg-error text-white shadow transition-transform hover:scale-110"
+                :disabled="deletingTag !== null"
+                @click.stop="handleDeleteTag(tag.label)"
+              >
+                <Icon name="tabler:x" class="size-2.5" />
+              </button>
+            </div>
           </div>
           <div
             v-if="availableFilters.tags.length === 0"
