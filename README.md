@@ -1,6 +1,9 @@
 # ChronoFrame
 
-> 本项目 fork 自 [HoshinoSuzumi/chronoframe](https://github.com/HoshinoSuzumi/chronoframe)，在原项目基础上进行了功能增强和优化，供个人使用。
+> 本项目 fork 自
+ [HoshinoSuzumi/chronoframe](https://github.com/HoshinoSuzumi/chronoframe)
+ [cpt-kenvie](https://github.com/cpt-kenvie/chronoframe-private)
+ 在cpt-kenvie的基础上进行了功能增强和优化，供个人使用。
 >
 > **致谢**：感谢原作者 [HoshinoSuzumi](https://github.com/HoshinoSuzumi) 及所有贡献者。本项目基于原项目 **MIT 授权时期**的代码（`LICENSE` 保留原版权与 MIT 声明）；原项目后续版本已转为 AGPL-3.0-only，与本项目无代码合并关系。
 
@@ -41,7 +44,7 @@
 - **删除更可靠** - 删除照片时存储文件删除失败不再静默，明确提示"N 个文件未能从存储删除，仍保留在存储中"
 - **编辑弹窗滚动修复** - 小屏下元数据编辑弹窗可完整滚动查看
 
-### 其他增强
+### 历史版本其他增强
 
 - **高德地图支持** - 新增高德地图作为地图服务提供商，适配国内使用场景
 - **相册管理增强**
