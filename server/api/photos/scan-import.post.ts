@@ -38,10 +38,8 @@ const VIDEO_EXTENSIONS = new Set([
   '.mpeg',
   '.mpg',
 ])
-// 与 app/libs/upload-task-classifier.ts 的实况照片判断保持一致
+// .mov 视频扩展（与上传分类器的实况照片判断一致）
 const LIVE_PHOTO_VIDEO_EXTENSIONS = new Set(['.mov'])
-const LIVE_PHOTO_IMAGE_EXTENSIONS = new Set(['.heic', '.heif', '.jpg', '.jpeg'])
-
 type ScanTaskType = 'photo' | 'video' | 'live-photo-video'
 
 const getExtension = (key: string) => path.extname(key).toLowerCase()
@@ -50,12 +48,6 @@ const getExtension = (key: string) => path.extname(key).toLowerCase()
 const normalizeKey = (key: string) =>
   key.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+/, '')
 
-const getPairId = (key: string) => {
-  const ext = path.extname(key)
-  const dir = path.dirname(key)
-  const base = path.basename(key, ext).toLowerCase()
-  return `${dir}/${base}`
-}
 
 export default eventHandler(async (event) => {
   await requireUserSession(event)
@@ -85,24 +77,32 @@ export default eventHandler(async (event) => {
     })
   }
 
-  const candidateKeys = objects
-    .map((o) => o.key)
-    .filter((key) => {
-      const name = path.basename(key)
-      if (name.startsWith('.')) return false
-      // 缩略图目录排除：兼容任意存储布局（本地 photos/thumbnails/、
-      // OpenList .../photos/thumbnails/ 等），认"父目录名为 thumbnails"
-      const parent = path.basename(path.dirname(key))
-      if (parent === 'thumbnails') return false
-      const rel = stripPrefix(key)
-      if (rel === 'thumbnails' || rel.startsWith('thumbnails/')) return false
-      const ext = getExtension(key)
-      return (
-        IMAGE_EXTENSIONS.has(ext) ||
-        VIDEO_EXTENSIONS.has(ext) ||
-        LIVE_PHOTO_VIDEO_EXTENSIONS.has(ext)
-      )
-    })
+  // 只处理静态图片；视频文件一概跳过——
+  // 伴生视频由照片管线自动配对（LivePhoto 检测/动态照片内嵌提取），无需单独入库
+  let skippedVideos = 0
+  const candidateKeys: string[] = []
+  for (const obj of objects) {
+    const key = obj.key
+    const name = path.basename(key)
+    if (name.startsWith('.')) continue
+    // 缩略图目录排除：兼容任意存储布局（本地 photos/thumbnails/、
+    // OpenList .../photos/thumbnails/ 等），认"父目录名为 thumbnails"
+    const parent = path.basename(path.dirname(key))
+    if (parent === 'thumbnails') continue
+    const rel = stripPrefix(key)
+    if (rel === 'thumbnails' || rel.startsWith('thumbnails/')) continue
+    const ext = getExtension(key)
+    if (
+      VIDEO_EXTENSIONS.has(ext) ||
+      LIVE_PHOTO_VIDEO_EXTENSIONS.has(ext)
+    ) {
+      skippedVideos += 1
+      continue
+    }
+    if (IMAGE_EXTENSIONS.has(ext)) {
+      candidateKeys.push(key)
+    }
+  }
   const candidateSet = new Set(candidateKeys)
 
   // 2. 与数据库比对（多键去重：任一文件键命中即视为已入库）
@@ -174,29 +174,8 @@ export default eventHandler(async (event) => {
       ),
   )
 
-  // 图片同名（含库内）判定：用于伴生视频归类
-  const imageStems = new Set(
-    [...candidateKeys, ...knownKeys]
-      .filter((key) =>
-        LIVE_PHOTO_IMAGE_EXTENSIONS.has(getExtension(String(key))),
-      )
-      .map((key) => getPairId(String(key))),
-  )
-
-  const classify = (key: string): ScanTaskType => {
-    const ext = getExtension(key)
-    if (
-      VIDEO_EXTENSIONS.has(ext) ||
-      LIVE_PHOTO_VIDEO_EXTENSIONS.has(ext)
-    ) {
-      // 同名图片存在 → 伴生视频（Motion Photo/Live Photo 的视频部分），
-      // 归为实况视频配对，不作为独立视频入库
-      return imageStems.has(getPairId(key))
-        ? 'live-photo-video'
-        : 'video'
-    }
-    return 'photo'
-  }
+  // 候选已过滤为静态图片，统一按照片导入
+  const classify = (_key: string): ScanTaskType => 'photo' 
 
   const newItems: Array<{ type: ScanTaskType; storageKey: string }> = []
   let existingCount = 0
@@ -290,6 +269,7 @@ export default eventHandler(async (event) => {
       scanned: candidateSet.size,
       existing: existingCount,
       queued: 0,
+      skippedVideos,
       aiQueued,
       conflicts: conflictCount,
       scanRoot,
@@ -314,6 +294,7 @@ export default eventHandler(async (event) => {
     scanned: candidateSet.size,
     existing: existingCount,
     queued: newItems.length,
+    skippedVideos,
     aiQueued,
     conflicts: conflictCount,
     scanRoot,
