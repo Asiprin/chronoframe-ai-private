@@ -72,12 +72,25 @@ export default eventHandler(async (event) => {
   }
 
   // 1. 枚举存储目录中的候选媒体文件（跳过缩略图目录与隐藏文件）
-  const objects = await storageProvider.listAll()
+  let objects
+  try {
+    objects = await storageProvider.listAll()
+  } catch (error: any) {
+    throw createError({
+      statusCode: 502,
+      statusMessage: `无法从存储服务获取文件列表：${error?.message || '连接失败'}。请检查存储设置（OpenList 需要服务可达，且已配置文件列表端点）`,
+    })
+  }
+
   const candidateKeys = objects
     .map((o) => o.key)
     .filter((key) => {
       const name = path.basename(key)
       if (name.startsWith('.')) return false
+      // 缩略图目录排除：兼容任意存储布局（本地 photos/thumbnails/、
+      // OpenList .../photos/thumbnails/ 等），认"父目录名为 thumbnails"
+      const parent = path.basename(path.dirname(key))
+      if (parent === 'thumbnails') return false
       const rel = stripPrefix(key)
       if (rel === 'thumbnails' || rel.startsWith('thumbnails/')) return false
       const ext = getExtension(key)
@@ -97,6 +110,16 @@ export default eventHandler(async (event) => {
       fileSize: tables.photos.fileSize,
     })
     .from(tables.photos)
+
+  // 存储里一个文件都没枚举到、库里却有照片 → 多半是存储列表不可用，给明确报错
+  if (objects.length === 0 && existingRows.length > 0) {
+    throw createError({
+      statusCode: 422,
+      statusMessage:
+        '未能从存储服务获取任何文件列表。请检查存储连接（OpenList 的文件列表端点需可用），或确认照片所在目录配置正确',
+    })
+  }
+
   const existingMap = new Map(
     existingRows.map((row) => [normalizeKey(row.storageKey), row.fileSize]),
   )
@@ -135,7 +158,22 @@ export default eventHandler(async (event) => {
     newItems.push({ type: classify(storageKey), storageKey })
   }
 
-  const scanRoot = (storageProvider.config?.prefix as string) || ''
+  // 提示用目录：优先取现有照片的公共目录（跨存储布局都能显示真实路径），
+  // 无现有照片时退回存储 prefix 配置
+  const commonDir = (() => {
+    const dirs = existingRows.map((row) =>
+      normalizeKey(row.storageKey).split('/').slice(0, -1).join('/'),
+    )
+    if (dirs.length === 0) return ''
+    let common = dirs[0]
+    for (const dir of dirs.slice(1)) {
+      while (common && dir !== common && !dir.startsWith(`${common}/`)) {
+        common = common.split('/').slice(0, -1).join('/')
+      }
+    }
+    return common
+  })()
+  const scanRoot = commonDir || (storageProvider.config?.prefix as string) || ''
 
   if (newItems.length === 0) {
     return {

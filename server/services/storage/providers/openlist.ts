@@ -251,42 +251,92 @@ export class OpenListStorageProvider implements StorageProvider {
   }
 
   async listAll(): Promise<StorageObject[]> {
-    // Listing API not provided explicitly; return empty array by default.
-    // You can configure custom list endpoint and parsing later.
-    const listPath = this.config.listEndpoint
-    if (!listPath) return []
-    
-    const payload: Record<string, any> = {
-      [this.pathField]: this.toAbsolutePath(this.normalizedRoot()),
-      password: '',
-      page: 1,
-      per_page: 0,
-      refresh: false,
+    // 未配置自定义端点时使用 OpenList/Alist 标准文件列表端点
+    const listPath = this.config.listEndpoint || '/api/fs/list'
+    const results: StorageObject[] = []
+    const visited = new Set<string>()
+    const MAX_FILES = 20000
+    const MAX_DEPTH = 12
+
+    // 兼容多种响应结构：data 数组 / data.content / content / data.data 数组
+    const extractItems = (data: unknown): any[] => {
+      if (Array.isArray(data)) return data
+      const record = toRecord(data)
+      if (!record) return []
+      if (Array.isArray(record.data)) return record.data
+      const inner = toRecord(record.data)
+      if (inner && Array.isArray(inner.content)) return inner.content
+      if (Array.isArray(record.content)) return record.content
+      return []
     }
-    const resp = await this.request(listPath, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    if (!resp.ok) return []
-    const data = (await resp.json().catch(() => null)) as any
-    const items: any[] = data?.data || data || []
-    return items
-      .map((item) => {
-        const rawKey = item?.path || item?.key || item?.name
-        if (!rawKey) return null
-        const rootedKey = this.withRoot(rawKey)
-        const size = item?.size
-        const lastModified = item?.modified || item?.lastModified || item?.mtime
-        const etag = item?.etag
-        return {
-          key: rootedKey,
+
+    const listDir = async (relDir: string, depth: number): Promise<void> => {
+      if (
+        depth > MAX_DEPTH ||
+        results.length >= MAX_FILES ||
+        visited.has(relDir)
+      ) {
+        return
+      }
+      visited.add(relDir)
+
+      const payload: Record<string, any> = {
+        [this.pathField]: this.toAbsolutePath(relDir),
+        password: '',
+        page: 1,
+        per_page: 0,
+        refresh: false,
+      }
+      const resp = await this.request(listPath, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!resp.ok) {
+        throw new Error(`OpenList 文件列表请求失败（HTTP ${resp.status}）`)
+      }
+      const data = (await resp.json().catch(() => null)) as unknown
+
+      for (const item of extractItems(data)) {
+        if (results.length >= MAX_FILES) return
+        const record = toRecord(item)
+        if (!record) continue
+
+        const name = typeof record.name === 'string' ? record.name : ''
+        const rawKey = record.path ?? record.key ?? record.name
+        if (!rawKey || typeof rawKey !== 'string') continue
+
+        const isDir =
+          record.is_dir === true ||
+          record.isDir === true ||
+          record.type === 'dir' ||
+          record.type === 'folder'
+
+        // name 是纯文件名时相对当前目录拼接；自定义端点可能直接给完整 key
+        const relKey =
+          name && !name.includes('/')
+            ? `${relDir}/${name}`.replace(/^\/+/, '').replace(/\/{2,}/g, '/')
+            : this.withRoot(rawKey)
+
+        if (isDir) {
+          await listDir(relKey, depth + 1)
+          continue
+        }
+
+        const size = record.size
+        const lastModified =
+          record.modified || record.lastModified || record.mtime
+        results.push({
+          key: relKey,
           size: typeof size === 'number' ? size : undefined,
           lastModified: lastModified ? new Date(lastModified) : undefined,
-          etag: typeof etag === 'string' ? etag : undefined,
-        } as StorageObject
-      })
-      .filter(Boolean) as StorageObject[]
+          etag: typeof record.etag === 'string' ? record.etag : undefined,
+        } as StorageObject)
+      }
+    }
+
+    await listDir(this.normalizedRoot(), 0)
+    return results
   }
 
   async listImages(): Promise<StorageObject[]> {

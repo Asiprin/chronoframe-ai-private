@@ -12,7 +12,7 @@
  * 不要用 dist/Exiftool.js —— 实际文件名是 ExifTool.js（大写 T），
  * macOS 不区分大小写察觉不到，Linux（Docker 构建）会 ENOENT。
  */
-import { cp, mkdir, realpath, rm, stat } from 'node:fs/promises'
+import { cp, mkdir, readFile, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -68,3 +68,57 @@ await mkdir(path.dirname(dest), { recursive: true })
 await rm(dest, { recursive: true, force: true })
 await cp(src, dest, { recursive: true })
 console.log(`[fixup] exiftool-vendored.pl 已补齐到 ${path.relative(root, dest)}`)
+
+// ===== @iconify-json/* 图标数据包 =====
+// nuxt-icon 的 /api/_nuxt_icon/* 运行时动态 import(@iconify-json/xx)，
+// Nitro 追踪不到，缺失会导致图标接口 500（ERR_MODULE_NOT_FOUND）。
+try {
+  const iconifySrc = path.join(root, 'node_modules/@iconify-json')
+  const iconifyDest = path.join(root, '.output/server/node_modules/@iconify-json')
+  const entries = await readdir(iconifySrc, { withFileTypes: true })
+  await mkdir(iconifyDest, { recursive: true })
+  let copied = 0
+  for (const entry of entries) {
+    if (!entry.isDirectory() && !entry.isSymbolicLink()) continue
+    const target = path.join(iconifyDest, entry.name)
+    await rm(target, { recursive: true, force: true })
+    await cp(path.join(iconifySrc, entry.name), target, {
+      recursive: true,
+      dereference: true,
+    })
+    copied += 1
+  }
+  console.log(`[fixup] @iconify-json/* 已补齐 ${copied} 个图标包`)
+} catch {
+  console.warn('[fixup] 未找到 @iconify-json，跳过（图标接口可能 500，不影响核心功能）')
+}
+
+// ===== JSON 导入属性语法修复 =====
+// 打包产物里 JSON 动态导入被降级为旧的 `assert` 语法（Node 22 只认 `with`），
+// 导致 /api/_nuxt_icon/* 报 ERR_IMPORT_ATTRIBUTE_MISSING。批量替换。
+try {
+  const chunksDir = path.join(root, '.output/server/chunks')
+  const walk = async (dir) => {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const abs = path.join(dir, entry.name)
+      if (entry.isDirectory()) await walk(abs)
+      else if (entry.name.endsWith('.mjs')) {
+        const content = await readFile(abs, 'utf8')
+        const patched = content
+          .replaceAll("{ assert: { type: 'json' } }", "{ with: { type: 'json' } }")
+          .replaceAll('{ assert: { type: "json" } }', '{ with: { type: "json" } }')
+        if (patched !== content) {
+          await writeFile(abs, patched)
+          fixedFiles += 1
+        }
+      }
+    }
+  }
+  let fixedFiles = 0
+  await walk(chunksDir)
+  if (fixedFiles > 0) {
+    console.log(`[fixup] JSON 导入属性（assert→with）已修复 ${fixedFiles} 个文件`)
+  }
+} catch (error) {
+  console.warn('[fixup] JSON 导入属性修复失败（不影响构建）：', error?.message)
+}
