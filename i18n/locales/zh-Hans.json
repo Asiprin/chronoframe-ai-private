@@ -1270,6 +1270,14 @@
           "on": "开启"
         },
         "help": "默认关闭，只补全空白字段，保护手动填写的内容"
+      },
+      "promptTemplates": {
+        "label": "提示词模板",
+        "description": "AI 生成元数据使用的提示词模板，可添加、编辑和删除"
+      },
+      "activePromptTemplate": {
+        "label": "当前模板",
+        "description": "选择本次生成使用的提示词模板"
       }
     },
     "upload": {

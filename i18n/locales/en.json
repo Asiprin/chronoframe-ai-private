@@ -1270,6 +1270,14 @@
           "on": "On"
         },
         "help": "Off by default — only empty fields are filled, protecting manual edits"
+      },
+      "promptTemplates": {
+        "label": "Prompt Templates",
+        "description": "Prompt templates for AI metadata generation; add, edit, or delete as needed"
+      },
+      "activePromptTemplate": {
+        "label": "Active Template",
+        "description": "Choose the prompt template used for generation"
       }
     },
     "upload": {

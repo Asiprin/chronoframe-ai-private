@@ -361,6 +361,36 @@ export const DEFAULT_SETTINGS = [
     label: 'settings.ai.overwrite.label',
     description: 'settings.ai.overwrite.description',
   },
+  {
+    namespace: 'ai',
+    key: 'promptTemplates',
+    type: 'string',
+    defaultValue: JSON.stringify([
+      {
+        id: 'default',
+        name: '默认模板',
+        prompt: `请为图片撰写一段简短的配文包括图片标题和图片描述。其目的并非重复描述画面内容，而是传达一种深意——即观者在看过画面后，脑海中会留下的那句话。
+撰写原则：
+1. 联想必须完全基于画面中已有的信息。切勿凭空编造时间、人物关系或事件背景。
+2. 语言应自然且有趣，可带有些许克制的幽默感或诗意；但要避免矫揉造作、励志口号、小学生作文式的表达，以及套路化的陈词滥调。
+3. 可以表达一种微妙的日常心境、淡淡的自嘲或冷幽默，对记忆或某个瞬间的内敛感悟，亦或是某种耐人寻味的平实观察。
+4. 除非确实必要，否则应避免使用诸如“世界”、“梦”、“时光”、“岁月”、“温柔”、“治愈”、“刚刚好”、“悄悄”、“慢慢”这类陈词滥调。
+5. 避免使用诸如“……里……着整个世界/整个夏天”之类的句式，以及简单的“……像……”、“……比……更……”等比较结构。
+6. 不要提及媒介本身，例如“这张照片”、“这一刻”或“那天”等表述。
+7. 仅提供一个句子，无需换行、引号、前缀或任何解释。标题中文长度控制在 10 个汉字以内，描述中文长度 8 至 24 个汉字之间，且不得超过 30 字；其他语言亦应保持精炼，建议在 4 至 18 个词之间。`,
+      },
+    ]),
+    label: 'settings.ai.promptTemplates.label',
+    description: 'settings.ai.promptTemplates.description',
+  },
+  {
+    namespace: 'ai',
+    key: 'activePromptTemplate',
+    type: 'string',
+    defaultValue: 'default',
+    label: 'settings.ai.activePromptTemplate.label',
+    description: 'settings.ai.activePromptTemplate.description',
+  },
   // NAMESPACE: security
   {
     namespace: 'security',

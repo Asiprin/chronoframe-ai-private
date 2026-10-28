@@ -1200,6 +1200,14 @@
           "on": "開啟"
         },
         "help": "預設關閉，只填補空白欄位，保護手動填寫的內容"
+      },
+      "promptTemplates": {
+        "label": "提示詞模板",
+        "description": "AI 產生中繼資料使用的提示詞模板，可新增、編輯和刪除"
+      },
+      "activePromptTemplate": {
+        "label": "目前模板",
+        "description": "選擇本次產生使用的提示詞模板"
       }
     },
     "oauth": {

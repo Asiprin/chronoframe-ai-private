@@ -264,6 +264,15 @@ export const AI_SETTINGS_UI: Record<string, FieldUIConfig> = {
     visibleIf: { fieldKey: 'enabled', value: true },
     help: 'settings.ai.overwrite.help',
   },
+  // 提示词模板由 system.vue 自定义 UI 渲染（模板选择 + 增删改）
+  activePromptTemplate: {
+    type: 'custom',
+    visibleIf: { fieldKey: 'enabled', value: true },
+  },
+  promptTemplates: {
+    type: 'custom',
+    visibleIf: { fieldKey: 'enabled', value: true },
+  },
 }
 
 export const UPLOAD_SETTINGS_UI: Record<string, FieldUIConfig> = {

@@ -26,7 +26,11 @@ const visibleOAuthFields = computed(() => filterVisible(oauthFields.value, oauth
 const visibleAnalyticsFields = computed(() =>
   filterVisible(analyticsFields.value, analyticsState),
 )
-const visibleAIFields = computed(() => filterVisible(aiFields.value, aiState))
+const visibleAIFields = computed(() =>
+  filterVisible(aiFields.value, aiState).filter(
+    (field) => !CUSTOM_AI_FIELD_KEYS.has(field.key),
+  ),
+)
 const visibleUploadFields = computed(() => filterVisible(uploadFields.value, uploadState))
 const visibleSecurityFields = computed(() =>
   filterVisible(securityFields.value, securityState),
@@ -54,6 +58,103 @@ const handleAISubmit = async () => {
   } catch {
     /* empty */
   }
+}
+
+// ===== 提示词模板管理 =====
+interface PromptTemplateItem {
+  id: string
+  name: string
+  prompt: string
+}
+
+const CUSTOM_AI_FIELD_KEYS = new Set(['promptTemplates', 'activePromptTemplate'])
+
+const parsePromptTemplates = (raw: unknown): PromptTemplateItem[] => {
+  try {
+    const parsed = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+      (t: any) => t && typeof t.id === 'string' && typeof t.prompt === 'string',
+    )
+  } catch {
+    return []
+  }
+}
+
+const promptTemplates = computed<PromptTemplateItem[]>({
+  get: () => parsePromptTemplates(aiState.promptTemplates),
+  set: (val) => {
+    aiState.promptTemplates = JSON.stringify(val)
+  },
+})
+
+const activeTemplateId = computed<string>({
+  get: () => String(aiState.activePromptTemplate || 'default'),
+  set: (val) => {
+    aiState.activePromptTemplate = val
+  },
+})
+
+const templateOptions = computed(() =>
+  promptTemplates.value.map((t) => ({ label: t.name, value: t.id })),
+)
+
+const editingTemplate = ref<{
+  id: string | null
+  name: string
+  prompt: string
+} | null>(null)
+
+const startCreateTemplate = () => {
+  editingTemplate.value = { id: null, name: '', prompt: '' }
+}
+
+const startEditTemplate = (tpl: PromptTemplateItem) => {
+  editingTemplate.value = { id: tpl.id, name: tpl.name, prompt: tpl.prompt }
+}
+
+const saveEditingTemplate = () => {
+  const editing = editingTemplate.value
+  if (!editing) return
+  const name = editing.name.trim()
+  const prompt = editing.prompt.trim()
+  if (!name || !prompt) {
+    toast.add({
+      title: '模板名称和提示词不能为空',
+      color: 'warning',
+    })
+    return
+  }
+  const list = [...promptTemplates.value]
+  if (editing.id) {
+    const idx = list.findIndex((t) => t.id === editing.id)
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], name, prompt }
+    }
+  } else {
+    list.push({ id: `tpl-${Date.now()}`, name, prompt })
+  }
+  promptTemplates.value = list
+  editingTemplate.value = null
+  toast.add({
+    title: '模板已保存',
+    description: '点击"保存设置"后生效',
+    color: 'info',
+  })
+}
+
+const deleteTemplate = (tpl: PromptTemplateItem) => {
+  if (tpl.id === 'default') return
+  promptTemplates.value = promptTemplates.value.filter((t) => t.id !== tpl.id)
+  if (activeTemplateId.value === tpl.id) {
+    activeTemplateId.value = 'default'
+  }
+  editingTemplate.value = null
+  toast.add({
+    title: `已删除模板「${tpl.name}」`,
+    description: '点击"保存设置"后生效',
+    color: 'info',
+  })
 }
 
 const toast = useToast()
@@ -268,6 +369,120 @@ const handleSecuritySubmit = async () => {
               :model-value="aiState[field.key]"
               @update:model-value="(val) => (aiState[field.key] = val)"
             />
+
+            <USeparator />
+
+            <!-- 提示词模板管理 -->
+            <div class="space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="space-y-1">
+                  <div class="font-medium">提示词模板</div>
+                  <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                    AI 生成元数据的提示词指南，可自行添加、编辑、删除模板
+                  </p>
+                </div>
+                <USelect
+                  v-model="activeTemplateId"
+                  :items="templateOptions"
+                  class="w-56"
+                />
+              </div>
+
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="text-sm text-neutral-500 dark:text-neutral-400">
+                    模板管理
+                  </div>
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    icon="tabler:plus"
+                    @click="startCreateTemplate"
+                  >
+                    新建模板
+                  </UButton>
+                </div>
+
+                <div
+                  v-if="editingTemplate"
+                  class="space-y-2 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800"
+                >
+                  <UInput
+                    v-model="editingTemplate.name"
+                    placeholder="模板名称"
+                    class="w-full"
+                  />
+                  <UTextarea
+                    v-model="editingTemplate.prompt"
+                    :rows="8"
+                    placeholder="提示词内容"
+                    class="w-full"
+                  />
+                  <div class="flex gap-2">
+                    <UButton size="xs" @click="saveEditingTemplate">
+                      保存模板
+                    </UButton>
+                    <UButton
+                      size="xs"
+                      variant="soft"
+                      @click="editingTemplate = null"
+                    >
+                      取消
+                    </UButton>
+                  </div>
+                </div>
+
+                <div
+                  v-for="tpl in promptTemplates"
+                  :key="tpl.id"
+                  class="flex items-start justify-between gap-3 rounded-lg border border-neutral-200 p-2 dark:border-neutral-800"
+                >
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2 text-sm font-medium">
+                      <span>{{ tpl.name }}</span>
+                      <UBadge
+                        v-if="tpl.id === 'default'"
+                        color="neutral"
+                        variant="subtle"
+                        size="sm"
+                      >
+                        默认
+                      </UBadge>
+                      <UBadge
+                        v-if="tpl.id === activeTemplateId"
+                        color="primary"
+                        variant="subtle"
+                        size="sm"
+                      >
+                        使用中
+                      </UBadge>
+                    </div>
+                    <p
+                      class="mt-1 line-clamp-2 text-xs text-neutral-500 dark:text-neutral-400"
+                    >
+                      {{ tpl.prompt }}
+                    </p>
+                  </div>
+                  <div class="flex shrink-0 gap-1">
+                    <UButton
+                      size="xs"
+                      variant="ghost"
+                      color="neutral"
+                      icon="tabler:pencil"
+                      @click="startEditTemplate(tpl)"
+                    />
+                    <UButton
+                      size="xs"
+                      variant="ghost"
+                      color="error"
+                      icon="tabler:trash"
+                      :disabled="tpl.id === 'default'"
+                      @click="deleteTemplate(tpl)"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </UForm>
 
           <template #footer>
