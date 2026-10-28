@@ -63,6 +63,16 @@ export const DEFAULT_SETTINGS = [
     description: 'settings.app.appearance.theme.description',
     isPublic: true,
   },
+  {
+    namespace: 'app',
+    key: 'photoOrder',
+    type: 'string',
+    defaultValue: 'desc',
+    enum: ['desc', 'asc'],
+    label: 'settings.app.photoOrder.label',
+    description: 'settings.app.photoOrder.description',
+    isPublic: true,
+  },
   // NAMESPACE: map
   {
     namespace: 'map',

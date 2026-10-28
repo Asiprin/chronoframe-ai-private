@@ -670,7 +670,8 @@
         "scanImportHint": "请把照片放入 {root}（与现有照片同一目录，支持子文件夹）",
         "scanImportRootLabel": "存储目录根文件夹",
         "scanImportConflicts": "{count} 个文件与库中记录同名但内容不同，如需导入请先重命名",
-        "aiGenerateOverwriteHint": "将重新生成并覆盖现有标题、描述和标签"
+        "aiGenerateOverwriteHint": "将重新生成并覆盖现有标题、描述和标签",
+        "scanImportAiQueued": "{count} 张缺少描述的已有照片已加入 AI 生成队列"
       },
       "errors": {
         "noSelection": "请选择要上传的照片",
@@ -728,6 +729,14 @@
           "cancel": "取消",
           "save": "保存更改"
         }
+      },
+      "sort": {
+        "label": "瀑布流排序",
+        "desc": "时间降序",
+        "asc": "时间升序",
+        "descSaved": "瀑布流已设为时间降序",
+        "ascSaved": "瀑布流已设为时间升序",
+        "saveFailed": "排序设置失败"
       }
     },
     "albums": {
@@ -967,6 +976,15 @@
           "dark": "深色",
           "system": "系统"
         }
+      },
+      "photoOrder": {
+        "label": "瀑布流排序",
+        "description": "照片瀑布流的时间排序方向",
+        "options": {
+          "desc": "时间降序（新照片在前）",
+          "asc": "时间升序（旧照片在前）"
+        },
+        "help": "同时作用于访客浏览的照片流"
       }
     },
     "map": {

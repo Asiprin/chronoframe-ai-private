@@ -622,6 +622,62 @@ const migrateResult = ref<{
   samples: Array<{ column: string; before: string; after: string }>
 } | null>(null)
 
+const storageProviders = ref<
+  Array<{ id: number; name: string; provider: string; config: any }>
+>([])
+const migrateSourceId = ref<number | null>(null)
+
+// 存储方案的"文件根路径"：OpenList 用 rootPath，其余用 prefix
+const providerRootKey = (p: any): string => {
+  if (!p) return ''
+  let cfg: any = p.config ?? {}
+  if (typeof cfg === 'string') {
+    try {
+      cfg = JSON.parse(cfg)
+    } catch {
+      cfg = {}
+    }
+  }
+  const raw = p.provider === 'openlist' ? (cfg.rootPath ?? '') : (cfg.prefix ?? '')
+  return String(raw)
+    .replace(/\\/g, '/')
+    .replace(/\/+/g, '/')
+    .replace(/^\/+|\/+$/g, '')
+}
+
+const migrateTarget = computed(
+  () =>
+    storageProviders.value.find(
+      (p) => String(p.id) === String(storageState.provider ?? ''),
+    ) ?? null,
+)
+const migrateSource = computed(
+  () =>
+    storageProviders.value.find((p) => p.id === migrateSourceId.value) ?? null,
+)
+
+const applyMigratePlan = () => {
+  migrateState.fromPrefix = providerRootKey(migrateSource.value)
+  migrateState.toPrefix = providerRootKey(migrateTarget.value)
+}
+watch(migrateSourceId, applyMigratePlan)
+
+onMounted(async () => {
+  try {
+    const res = await $fetch('/api/system/settings/storage-config')
+    storageProviders.value = Array.isArray(res) ? res : []
+    const other = storageProviders.value.find(
+      (p) => String(p.id) !== String(storageState.provider ?? ''),
+    )
+    if (other) {
+      migrateSourceId.value = other.id
+      applyMigratePlan()
+    }
+  } catch {
+    /* 保持手动输入模式 */
+  }
+})
+
 const runMigrate = async (dryRun: boolean) => {
   if (!migrateState.fromPrefix.trim()) {
     toast.add({ title: '请填写要替换的键前缀', color: 'warning' })
@@ -995,6 +1051,39 @@ const handleMigrateApply = () => {
               更换存储方案后（如 OpenList → 本地），历史文件键可能带有旧存储的路径前缀，
               导致按新方案找不到文件。此工具批量重写照片的存储键前缀。
               先「预览」确认影响范围，再「执行迁移」。
+            </p>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <UFormField label="原存储方案（从）">
+                <USelect
+                  v-model="migrateSourceId"
+                  class="w-full"
+                  placeholder="选择原存储方案"
+                  :items="
+                    storageProviders
+                      .filter(
+                        (p) => String(p.id) !== String(storageState.provider ?? ''),
+                      )
+                      .map((p) => ({
+                        label: `${p.name}（${p.provider}）`,
+                        value: p.id,
+                      }))
+                  "
+                />
+              </UFormField>
+              <UFormField label="目标方案（到）">
+                <UInput
+                  :model-value="
+                    migrateTarget
+                      ? `${migrateTarget.name}（${migrateTarget.provider}，当前启用）`
+                      : '当前启用的存储方案'
+                  "
+                  class="w-full"
+                  disabled
+                />
+              </UFormField>
+            </div>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">
+              选择原存储方案后，会按两个方案里填写的照片路径自动补全下方前缀（可手动微调）
             </p>
             <div class="grid gap-3 sm:grid-cols-2">
               <UFormField label="要替换的前缀">

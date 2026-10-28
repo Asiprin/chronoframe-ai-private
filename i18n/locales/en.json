@@ -670,7 +670,8 @@
         "scanImportHint": "Put photos in {root} (same folder as existing photos, subfolders supported)",
         "scanImportRootLabel": "the storage root folder",
         "scanImportConflicts": "{count} files share names with existing entries but differ in content; rename them to import",
-        "aiGenerateOverwriteHint": "Will regenerate and overwrite existing title, description, and tags"
+        "aiGenerateOverwriteHint": "Will regenerate and overwrite existing title, description, and tags",
+        "scanImportAiQueued": "{count} existing photos missing descriptions queued for AI generation"
       },
       "errors": {
         "noSelection": "Please select photos to upload",
@@ -728,6 +729,14 @@
           "cancel": "Cancel",
           "save": "Save changes"
         }
+      },
+      "sort": {
+        "label": "Gallery Order",
+        "desc": "Newest first",
+        "asc": "Oldest first",
+        "descSaved": "Gallery set to newest first",
+        "ascSaved": "Gallery set to oldest first",
+        "saveFailed": "Failed to save sort order"
       }
     },
     "albums": {
@@ -967,6 +976,15 @@
           "dark": "Dark",
           "system": "System"
         }
+      },
+      "photoOrder": {
+        "label": "Gallery Order",
+        "description": "Time sort direction of the photo waterfall",
+        "options": {
+          "desc": "Newest first",
+          "asc": "Oldest first"
+        },
+        "help": "Applies to the visitor gallery as well"
       }
     },
     "map": {

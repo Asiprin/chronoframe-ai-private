@@ -620,7 +620,8 @@
         "scanImportHint": "写真を {root}（既存写真と同じフォルダ、サブフォルダ対応）に入れてください",
         "scanImportRootLabel": "ストレージのルートフォルダ",
         "scanImportConflicts": "{count} 件のファイルが既存エントリと同名ですが内容が異なります。取り込むにはリネームしてください",
-        "aiGenerateOverwriteHint": "既存のタイトル・説明・タグを再生成して上書きします"
+        "aiGenerateOverwriteHint": "既存のタイトル・説明・タグを再生成して上書きします",
+        "scanImportAiQueued": "説明のない既存写真 {count} 件を AI 生成キューに追加しました"
       },
       "errors": {
         "noSelection": "アップロードする写真を選択してください",
@@ -678,6 +679,14 @@
           "cancel": "キャンセル",
           "save": "変更を保存"
         }
+      },
+      "sort": {
+        "label": "フォト並び順",
+        "desc": "新しい順",
+        "asc": "古い順",
+        "descSaved": "新しい順に設定しました",
+        "ascSaved": "古い順に設定しました",
+        "saveFailed": "並び順の保存に失敗しました"
       }
     },
     "albums": {
@@ -917,6 +926,15 @@
           "dark": "ダーク",
           "system": "システム"
         }
+      },
+      "photoOrder": {
+        "label": "フォト並び順",
+        "description": "フォトウォーターフォールの時間ソート方向",
+        "options": {
+          "desc": "新しい順（新着が先）",
+          "asc": "古い順（過去が先）"
+        },
+        "help": "訪問者のフォトストリームにも適用されます"
       }
     },
     "map": {

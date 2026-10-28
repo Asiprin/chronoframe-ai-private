@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { and, eq, isNull, or, sql } from 'drizzle-orm'
 
 /**
  * 扫描导入：把直接拷贝进存储目录的媒体文件批量入库。
@@ -123,6 +124,14 @@ export default eventHandler(async (event) => {
   const existingMap = new Map(
     existingRows.map((row) => [normalizeKey(row.storageKey), row.fileSize]),
   )
+  // 同名同大小指纹（文件键前缀错位时防重复导入已有照片）
+  const existingFingerprints = new Set(
+    existingRows
+      .filter((row) => typeof row.fileSize === 'number')
+      .map(
+        (row) => `${path.basename(normalizeKey(row.storageKey))}|${row.fileSize}`,
+      ),
+  )
 
   // 实况照片配对集合：同目录同名的图片（照抄上传分类器的语义）
   const liveImagePairIds = new Set(
@@ -155,6 +164,12 @@ export default eventHandler(async (event) => {
       }
       continue
     }
+    // 键不匹配但同名同大小 → 已入库照片（存储键前缀错位），绝不重复导入
+    const fingerprint = `${path.basename(normalizeKey(storageKey))}|${obj.size ?? -1}`
+    if (existingFingerprints.has(fingerprint)) {
+      existingCount += 1
+      continue
+    }
     newItems.push({ type: classify(storageKey), storageKey })
   }
 
@@ -175,18 +190,6 @@ export default eventHandler(async (event) => {
   })()
   const scanRoot = commonDir || (storageProvider.config?.prefix as string) || ''
 
-  if (newItems.length === 0) {
-    return {
-      success: true,
-      scanned: candidateSet.size,
-      existing: existingCount,
-      queued: 0,
-      conflicts: conflictCount,
-      scanRoot,
-    }
-  }
-
-  // 3. 批量投递处理任务（优先级与网页上传一致）
   const workerPool = globalThis.__workerPool
   if (!workerPool) {
     throw createError({
@@ -195,6 +198,42 @@ export default eventHandler(async (event) => {
     })
   }
 
+  // 3. AI 补全：库里缺少描述的照片（含刚导入的走照片管线自动生成）。
+  // 只投"补空字段"任务（不带 force）——已编辑描述的照片天然被跳过。
+  const needAiRows = await db
+    .select({ id: tables.photos.id })
+    .from(tables.photos)
+    .where(
+      and(
+        or(
+          isNull(tables.photos.description),
+          eq(tables.photos.description, ''),
+        ),
+        sql`COALESCE(${tables.photos.isVideo}, 0) != 1`,
+      ),
+    )
+  let aiQueued = 0
+  for (const row of needAiRows) {
+    await workerPool.addTask(
+      { type: 'photo-ai-metadata', photoId: row.id },
+      { priority: 1, maxAttempts: 3 },
+    )
+    aiQueued += 1
+  }
+
+  if (newItems.length === 0) {
+    return {
+      success: true,
+      scanned: candidateSet.size,
+      existing: existingCount,
+      queued: 0,
+      aiQueued,
+      conflicts: conflictCount,
+      scanRoot,
+    }
+  }
+
+  // 4. 批量投递处理任务（优先级与网页上传一致）
   const byType = { photo: 0, video: 0, 'live-photo-video': 0 }
   for (const item of newItems) {
     await workerPool.addTask(
@@ -212,6 +251,7 @@ export default eventHandler(async (event) => {
     scanned: candidateSet.size,
     existing: existingCount,
     queued: newItems.length,
+    aiQueued,
     conflicts: conflictCount,
     scanRoot,
     byType,

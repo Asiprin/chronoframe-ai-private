@@ -50,6 +50,22 @@ export const APP_SETTINGS_UI: Record<string, FieldUIConfig> = {
     ],
     help: 'settings.app.appearance.theme.help',
   },
+  photoOrder: {
+    type: 'tabs',
+    options: [
+      {
+        label: 'settings.app.photoOrder.options.desc',
+        value: 'desc',
+        icon: 'tabler:sort-descending',
+      },
+      {
+        label: 'settings.app.photoOrder.options.asc',
+        value: 'asc',
+        icon: 'tabler:sort-ascending',
+      },
+    ],
+    help: 'settings.app.photoOrder.help',
+  },
 }
 
 export const MAP_SETTINGS_UI: Record<string, FieldUIConfig> = {
