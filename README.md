@@ -86,7 +86,7 @@
 ```yaml
 services:
   chronoframe:
-    image: 60fps/chronoframe:latest
+    image: ghcr.io/asiprin/chronoframe-ai-private:latest
     container_name: chronoframe
     restart: unless-stopped
     ports:
@@ -114,7 +114,7 @@ docker compose up -d
 ### Docker（推荐）
 
 ```bash
-docker run -d --name chronoframe --restart unless-stopped -p 3000:3000 -v ./data:/app/data 60fps/chronoframe:latest
+docker run -d --name chronoframe --restart unless-stopped -p 3000:3000 -v ./data:/app/data ghcr.io/asiprin/chronoframe-ai-private:latest
 ```
 
 访问 `http://localhost:3000` 即可使用。
@@ -127,7 +127,7 @@ docker run -d --name chronoframe --restart unless-stopped -p 3000:3000 -v ./data
 ```yaml
 services:
   chronoframe:
-    image: 60fps/chronoframe:latest
+    image: ghcr.io/asiprin/chronoframe-ai-private:latest
     container_name: chronoframe
     restart: unless-stopped
     ports:
