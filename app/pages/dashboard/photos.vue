@@ -2302,21 +2302,81 @@ const targetPhoto = ref<Photo | null>(null)
 const selectedAlbumIds = ref<number[]>([])
 const isAddingToAlbums = ref(false)
 
+// 批量模式：把多选照片加入已创建的相簿（纯添加，不改动已有相册关系）
+const batchPhotoIds = ref<string[] | null>(null)
+const isBatchAlbumMode = computed(() => batchPhotoIds.value !== null)
+
 const openAddToAlbumsDialog = (photo: Photo) => {
+  batchPhotoIds.value = null
   targetPhoto.value = photo
   const currentAlbums = photoToAlbumsMap.value.get(photo.id) || []
   selectedAlbumIds.value = [...currentAlbums]
   isAddToAlbumsDialogOpen.value = true
 }
 
+const openBatchAddToAlbumsDialog = () => {
+  const selectedRowModel = table.value?.tableApi?.getFilteredSelectedRowModel()
+  const ids = (selectedRowModel?.rows ?? [])
+    .map((row: any) => row.original?.id)
+    .filter(Boolean)
+  if (ids.length === 0) {
+    toast.add({
+      title: $t('dashboard.photos.messages.batchSelectRequired'),
+      color: 'warning',
+    })
+    return
+  }
+  batchPhotoIds.value = ids
+  targetPhoto.value = null
+  selectedAlbumIds.value = []
+  isAddToAlbumsDialogOpen.value = true
+}
+
 const handleAddToAlbums = async () => {
-  if (!targetPhoto.value || selectedAlbumIds.value.length === 0) {
+  if (selectedAlbumIds.value.length === 0) {
     toast.add({
       title: '请至少选择一个相册',
       color: 'warning',
     })
     return
   }
+
+  // 批量添加：一次把所有选中照片加入所选相簿
+  if (isBatchAlbumMode.value) {
+    isAddingToAlbums.value = true
+    try {
+      const ids = batchPhotoIds.value || []
+      await Promise.all(
+        selectedAlbumIds.value.map((albumId) =>
+          $fetch(`/api/albums/${albumId}/photos`, {
+            method: 'POST',
+            body: { photoIds: ids },
+          }),
+        ),
+      )
+      toast.add({
+        title: '添加成功',
+        description: `已将 ${ids.length} 张照片添加到 ${selectedAlbumIds.value.length} 个相册`,
+        color: 'success',
+      })
+      isAddToAlbumsDialogOpen.value = false
+      rowSelection.value = {}
+      await refresh()
+      await refreshAlbums()
+    } catch (error) {
+      console.error('批量添加到相册失败:', error)
+      toast.add({
+        title: '添加失败',
+        description: '请稍后重试',
+        color: 'error',
+      })
+    } finally {
+      isAddingToAlbums.value = false
+    }
+    return
+  }
+
+  if (!targetPhoto.value) return
 
   isAddingToAlbums.value = true
 
@@ -3375,6 +3435,19 @@ onUnmounted(() => {
                   variant="soft"
                   color="primary"
                   size="xs"
+                  icon="tabler:folder-plus"
+                  class="flex-1 sm:flex-none"
+                  @click="openBatchAddToAlbumsDialog"
+                >
+                  <span>{{
+                    $t('dashboard.photos.selection.batchAddToAlbum')
+                  }}</span>
+                </UButton>
+
+                <UButton
+                  variant="soft"
+                  color="primary"
+                  size="xs"
                   icon="tabler:download"
                   class="flex-1 sm:flex-none"
                   @click="handleBatchDownload"
@@ -3672,9 +3745,15 @@ onUnmounted(() => {
           <template #content>
             <div class="p-6 space-y-4">
               <div class="space-y-2">
-                <h3 class="text-lg font-semibold">添加到相册</h3>
+                <h3 class="text-lg font-semibold">
+                  {{ isBatchAlbumMode ? '批量添加到相册' : '添加到相册' }}
+                </h3>
                 <p class="text-sm text-neutral-600 dark:text-neutral-400">
-                  选择要添加此照片的相册（可多选）
+                  {{
+                    isBatchAlbumMode
+                      ? `将 ${batchPhotoIds?.length || 0} 张选中照片添加到所选相册（可多选）`
+                      : '选择要添加此照片的相册（可多选）'
+                  }}
                 </p>
               </div>
 

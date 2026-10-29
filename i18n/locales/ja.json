@@ -535,7 +535,8 @@
         "batchReprocess": "一括再処理",
         "batchDownload": "一括ダウンロード",
         "batchDelete": "一括削除",
-        "batchAiGenerate": "AI 生成"
+        "batchAiGenerate": "AI 生成",
+        "batchAddToAlbum": "アルバムに追加"
       },
       "slideover": {
         "title": "写真をアップロード",

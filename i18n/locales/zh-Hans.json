@@ -585,7 +585,8 @@
         "batchReprocess": "重新处理",
         "batchDownload": "批量下载",
         "batchDelete": "批量删除",
-        "batchAiGenerate": "AI 生成"
+        "batchAiGenerate": "AI 生成",
+        "batchAddToAlbum": "添加到相册"
       },
       "slideover": {
         "title": "上传照片",

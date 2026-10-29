@@ -535,7 +535,8 @@
         "batchReprocess": "批量重新處理",
         "batchDownload": "批量下載",
         "batchDelete": "批量刪除",
-        "batchAiGenerate": "AI 產生"
+        "batchAiGenerate": "AI 產生",
+        "batchAddToAlbum": "加入相簿"
       },
       "slideover": {
         "title": "上傳照片",

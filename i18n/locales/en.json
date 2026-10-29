@@ -585,7 +585,8 @@
         "batchReprocess": "Reprocess",
         "batchDownload": "Download",
         "batchDelete": "Batch Delete",
-        "batchAiGenerate": "AI Generate"
+        "batchAiGenerate": "AI Generate",
+        "batchAddToAlbum": "Add to Album"
       },
       "slideover": {
         "title": "Upload Photos",

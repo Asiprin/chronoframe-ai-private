@@ -30,11 +30,23 @@ export default eventHandler(async (event) => {
   // 逐个删除存储文件，失败不再静默吞掉——收集后上报给调用方
   const failedFiles: string[] = []
   const deleteFile = async (key: string, label: string) => {
-    try {
-      await storageProvider.delete(key)
-    } catch (error) {
-      failedFiles.push(key)
-      logger.image.warn(`删除${label}失败（保留在存储中）: ${key}`, error)
+    // 网络存储偶发抖动（超时/断连）时延迟重试，指数退避 1s/2s
+    const maxAttempts = 3
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await storageProvider.delete(key)
+        return
+      } catch (error) {
+        if (attempt < maxAttempts) {
+          logger.image.warn(
+            `删除${label}第 ${attempt} 次失败，${attempt}s 后重试: ${key}`,
+          )
+          await new Promise((resolve) => setTimeout(resolve, attempt * 1000))
+          continue
+        }
+        failedFiles.push(key)
+        logger.image.warn(`删除${label}失败（保留在存储中）: ${key}`, error)
+      }
     }
   }
 
