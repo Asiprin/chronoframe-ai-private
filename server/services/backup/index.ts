@@ -433,7 +433,11 @@ export async function restoreBackupArchive(
     }
 
     // 原子替换数据库并清理陈旧 WAL/SHM
-    await rename(newDbTemp, dbPath)
+    // ⚠️ 临时文件在 /tmp，与数据卷不在同一文件系统，rename 跨盘会报 EXDEV；
+    // 先复制到目标同目录（同盘），再原子改名
+    const incomingDbPath = `${dbPath}.incoming`
+    await copyFile(newDbTemp, incomingDbPath)
+    await rename(incomingDbPath, dbPath)
     await rm(`${dbPath}-wal`, { force: true })
     await rm(`${dbPath}-shm`, { force: true })
 
