@@ -1,9 +1,7 @@
 # ChronoFrame
 
 > 本项目 fork 自
- [HoshinoSuzumi/chronoframe](https://github.com/HoshinoSuzumi/chronoframe)
-> 
- [cpt-kenvie](https://github.com/cpt-kenvie/chronoframe-private)
+ [HoshinoSuzumi/chronoframe](https://github.com/HoshinoSuzumi/chronoframe)以及[cpt-kenvie](https://github.com/cpt-kenvie/chronoframe-private)
  在cpt-kenvie的基础上进行了功能增强和优化，供个人使用。
 >
 > **致谢**：感谢原作者 [HoshinoSuzumi](https://github.com/HoshinoSuzumi) 及所有贡献者。本项目基于原项目 **MIT 授权时期**的代码（`LICENSE` 保留原版权与 MIT 声明）；原项目后续版本已转为 AGPL-3.0-only，与本项目无代码合并关系。
