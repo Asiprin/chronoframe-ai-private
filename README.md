@@ -26,11 +26,14 @@
   - 标签字数限制：每个标签不超过 2 个汉字（英文 2 个单词）
   - 生成语言可选：简体中文 / 繁體中文 / English / 日本語
 - **AI 服务测试按钮** - 设置页一键测试 API 连通性与模型图片识别能力（随机图形验证真视觉），并可一键加载可用模型列表供选择
+<img width="1160" height="696" alt="Snapzy_2026-10-30_13-31-31_879" src="https://github.com/user-attachments/assets/b8a5f602-ac97-464a-9c11-3785bb534fb5" />
+<img width="1164" height="750" alt="Snapzy_2026-10-30_13-31-51_348" src="https://github.com/user-attachments/assets/53db3d60-7446-45dc-bca4-50575f39e314" />
 
 ### 备份与恢复（2026-10）
 
 - **一键备份** - 导出数据库（设置、照片元数据、相册、账号）为 zip，可选打包本地照片文件
 - **备份恢复** - 上传备份 zip 即可恢复；含 zip-slip 安全防护、清单校验、覆盖前自动保留旧库 `.bak`
+<img width="1173" height="338" alt="Snapzy_2026-10-30_13-32-00_897" src="https://github.com/user-attachments/assets/b741ae39-475c-454d-942e-9189adce093f" />
 
 ### 照片管理增强（2026-10）
 
@@ -45,6 +48,7 @@
 - **删除更可靠** - 删除照片时存储文件删除失败自动延迟重试（网络抖动自愈），仍失败才提示"N 个文件未能从存储删除，仍保留在存储中"
 - **编辑弹窗滚动修复** - 小屏下元数据编辑弹窗可完整滚动查看
 - **相簿列表适配** - 描述列固定宽度、超宽自动换行，照片数/创建时间/操作列不再被挤出屏幕
+<img width="1236" height="731" alt="Snapzy_2026-10-30_13-32-13_098" src="https://github.com/user-attachments/assets/cfe83fd3-9a16-4776-b9bd-71d4877b4f7a" />
 
 ### 历史版本其他增强
 
@@ -102,64 +106,11 @@ docker compose up -d
 # 打开 http://<NAS IP>:3000 进入初始化向导（创建管理员 → 配置存储 → 配置 AI）
 ```
 
-**飞牛 fnOS 应用包**：应用中心 → 右上角「手动安装」→ 选择 `chronoframe_1.0.0_x86.fpk`（安装时自动拉取 Docker Hub 镜像）。
+**飞牛 fnOS 应用包**：应用中心 → 右上角「手动安装」→ 选择 `chronoframe.fpk`（安装时自动拉取 Docker 镜像）。
 
-> 镜像目前为 x86_64 架构；数据全部在 `data` 卷中，升级镜像不影响数据。
-
-## 🐳 快速部署
-
-默认配置下，部署**不需要**传 `.env` 文件或任何环境变量；只要挂载数据目录即可。
-原项目的.env配置已在设置中动态配置
-
-### Docker（推荐）
-
-```bash
-docker run -d --name chronoframe --restart unless-stopped -p 3000:3000 -v ./data:/app/data ghcr.io/asiprin/chronoframe-ai-private:latest
-```
 
 访问 `http://localhost:3000` 即可使用。
 
-
-### Docker Compose
-
-新建 `docker-compose.yml`：
-
-```yaml
-services:
-  chronoframe:
-    image: ghcr.io/asiprin/chronoframe-ai-private:latest
-    container_name: chronoframe
-    restart: unless-stopped
-    ports:
-      - '3000:3000'
-    volumes:
-      - ./data:/app/data
-```
-
-## 🛠️ 本地开发
-
-```bash
-# 安装依赖
-pnpm install
-
-# 数据库迁移
-pnpm db:migrate
-
-# 启动开发服务器
-pnpm dev
-```
-
-## 🐳 打包镜像
-
-```bash
-# 打包镜像
-docker build -t chronoframe:latest .
-
-# 运行容器
-docker run -d --name chronoframe --restart unless-stopped -p 3000:3000 -v ./data:/app/data chronoframe:latest
-```
-
-应用将在 `http://localhost:3000` 启动。
 
 ## 📄 许可证
 
