@@ -139,7 +139,7 @@ const onShareSite = () => {
     body: `## Description / Motto\n\n${$t('dashboard.overview.section.shareSite.description')}\n\n## URL\n\n[${window.location.origin}](${window.location.origin})`,
   })
   window.open(
-    `https://github.com/cpt-kenvie/chronoframe-private/discussions/new?${discussionParams}`,
+    `https://github.com/Asiprin/chronoframe-ai-private/issues/new?${discussionParams}`,
     '_blank',
   )
 }
@@ -205,7 +205,7 @@ const onShareSite = () => {
                 class="text-lg font-bold hover:text-primary"
                 target="_blank"
                 external
-                :to="`https://github.com/cpt-kenvie/chronoframe-private/releases/tag/v${$config.public.VERSION}`"
+                :to="`https://github.com/Asiprin/chronoframe-ai-private/releases/tag/v${$config.public.VERSION}`"
               >
                 {{
                   $t('dashboard.overview.section.runtimeInfo.versionTag', [

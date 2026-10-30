@@ -64,7 +64,7 @@ const navItems = computed<NavigationMenuItem[][]>(() => [
     {
       label: 'GitHub',
       icon: 'tabler:brand-github',
-      to: 'https://github.com/cpt-kenvie/chronoframe-private',
+      to: 'https://github.com/Asiprin/chronoframe-ai-private',
       target: '_blank',
     },
     {
