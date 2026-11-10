@@ -91,7 +91,7 @@ services:
   chronoframe:
     image: ghcr.io/asiprin/chronoframe-ai-private:latest
     container_name: chronoframe
-    restart: unless-stopped
+    restart: always
     ports:
       - '3000:3000'
     volumes:
